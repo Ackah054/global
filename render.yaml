@@ -1,9 +1,10 @@
 services:
   - type: web
-    name: global-app
-    env: python
-    buildCommand: pip install -r requirements.txt
+    name: stroke-tb-flask-app
+    runtime: python
+    buildCommand: ""
     startCommand: gunicorn app:app
     envVars:
-      - key: RENDER_PYTHON_VERSION
-        value: 3.10.13
+      - key: FLASK_ENV
+        value: production
+    plan: free

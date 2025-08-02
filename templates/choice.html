@@ -1,0 +1,812 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+     <!--PWA INSTALLATIONS CODES-->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <meta name="theme-color" content="#1e40af">
+    <link rel="icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+ <!--END OF PWA INSTALLATIONS CODES-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAI Diagnostic Platform | Hospital System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #1e40af;
+            --secondary-blue: #3b82f6;
+            --accent-green: #059669;
+            --light-gray: #f8fafc;
+            --medium-gray: #64748b;
+            --dark-gray: #334155;
+            --white: #ffffff;
+            --border-color: #e2e8f0;
+            --success-green: #10b981;
+            --warning-orange: #f59e0b;
+            --error-red: #ef4444;
+            --shadow-light: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-large: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--white);
+            padding: 0;
+            box-shadow: var(--shadow-medium);
+            position: relative;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-green) 0%, var(--success-green) 100%);
+        }
+
+        .header-top {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 0;
+            font-size: 0.85rem;
+        }
+
+        .header-top-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .certification-badges {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+        }
+
+        .badge i {
+            font-size: 0.9rem;
+        }
+
+        .header-main {
+            padding: 24px 0;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: var(--white);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-blue);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo-text h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .page-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: var(--dark-gray);
+            margin-bottom: 12px;
+        }
+
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: var(--medium-gray);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .diagnostic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+            gap: 32px;
+            margin-bottom: 48px;
+        }
+
+        .diagnostic-card {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-light);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .diagnostic-card:hover {
+            box-shadow: var(--shadow-large);
+            transform: translateY(-2px);
+            border-color: var(--secondary-blue);
+        }
+
+        .card-header {
+            padding: 24px 24px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .card-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            color: var(--white);
+            flex-shrink: 0;
+        }
+
+        .stroke-card .card-icon {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .tb-card .card-icon {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+        }
+
+        .card-title-section h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 8px;
+        }
+
+        .card-subtitle {
+            font-size: 0.95rem;
+            color: var(--medium-gray);
+            margin-bottom: 16px;
+        }
+
+        .accuracy-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: var(--success-green);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .card-content {
+            padding: 0 24px 24px;
+        }
+
+        .card-description {
+            font-size: 1rem;
+            color: var(--medium-gray);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+            font-size: 0.95rem;
+            color: var(--dark-gray);
+        }
+
+        .feature-list li i {
+            color: var(--success-green);
+            font-size: 0.9rem;
+            width: 16px;
+        }
+
+        .card-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: var(--light-gray);
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--medium-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            color: var(--white);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+        }
+
+        .card-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--success-green);
+            font-weight: 500;
+        }
+
+        .info-section {
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-light);
+            padding: 32px;
+            margin-top: 32px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 32px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--success-green) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: var(--white);
+            font-size: 1.5rem;
+        }
+
+        .info-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark-gray);
+            margin-bottom: 8px;
+        }
+
+        .info-description {
+            font-size: 0.95rem;
+            color: var(--medium-gray);
+            line-height: 1.5;
+        }
+
+        .compliance-footer {
+            margin-top: 48px;
+            padding: 24px;
+            background: var(--white);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .compliance-badges {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .compliance-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--medium-gray);
+            font-weight: 500;
+        }
+
+        .compliance-badge i {
+            color: var(--success-green);
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .header-actions {
+                order: -1;
+            }
+
+            .diagnostic-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .card-stats {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .compliance-badges {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .main-container {
+                padding: 24px 16px;
+            }
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border-color);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p style="color: var(--medium-gray); font-weight: 500;">Initializing diagnostic module...</p>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="header-top">
+            <div class="header-top-content">
+                <div class="certification-badges">
+                    <div class="badge">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>HIPAA Compliant</span>
+                    </div>
+                    <div class="badge">
+                        <i class="fas fa-certificate"></i>
+                        <span>FDA Cleared</span>
+                    </div>
+                    <div class="badge">
+                        <i class="fas fa-globe"></i>
+                        <span>ISO 27001 Certified</span>
+                    </div>
+                </div>
+                <div class="badge">
+                    <i class="fas fa-clock"></i>
+                    <span>24/7 Support Available</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-main">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="logo-text">
+                        <h1>AI Diagnostics</h1>
+                        <p>Clinical Decision Support System</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="user-info">
+                        <i class="fas fa-user-md"></i>
+                        <span>Dr. ZITA ACKAH</span>
+                    </div>
+                    <div class="user-info">
+                        <i class="fas fa-hospital"></i>
+                        <span>General Hospital</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <div class="page-header">
+            <h2 class="page-title">AI-Powered Diagnostic Modules</h2>
+            <p class="page-subtitle">
+                Select a diagnostic module to begin AI-assisted medical image analysis. 
+                All modules are clinically validated and designed for healthcare professionals.
+            </p>
+        </div>
+
+        <div class="diagnostic-grid">
+            <!-- Stroke Detection Module -->
+            <a href="/stroke" class="diagnostic-card stroke-card" onclick="showLoading('stroke')">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="card-title-section">
+                        <h3>Stroke Detection Module</h3>
+                        <p class="card-subtitle">Neurological Imaging Analysis</p>
+                        <div class="accuracy-badge">
+                            <i class="fas fa-check-circle"></i>
+                            <span>99.2% Accuracy</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <p class="card-description">
+                        Advanced deep learning algorithms analyze CT and MRI brain scans to detect acute stroke, 
+                        hemorrhage, and other neurological abnormalities with clinical-grade precision.
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i>CT and MRI compatibility</li>
+                        <li><i class="fas fa-check"></i>Real-time analysis (&lt;30 seconds)</li>
+                        <li><i class="fas fa-check"></i>DICOM integration</li>
+                        <li><i class="fas fa-check"></i>Detailed reporting with annotations</li>
+                        <li><i class="fas fa-check"></i>Emergency alert system</li>
+                    </ul>
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">99.2%</span>
+                            <span class="stat-label">Sensitivity</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">98.7%</span>
+                            <span class="stat-label">Specificity</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">&lt;30s</span>
+                            <span class="stat-label">Analysis Time</span>
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <button class="start-btn">
+                            <i class="fas fa-play"></i>
+                            <span>Start Analysis</span>
+                        </button>
+                        <div class="card-status">
+                            <i class="fas fa-circle"></i>
+                            <span>System Online</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Tuberculosis Detection Module -->
+            <a href="/tb" class="diagnostic-card tb-card" onclick="showLoading('tuberculosis')">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-lungs"></i>
+                    </div>
+                    <div class="card-title-section">
+                        <h3>Tuberculosis Detection Module</h3>
+                        <p class="card-subtitle">Chest Radiography Analysis</p>
+                        <div class="accuracy-badge">
+                            <i class="fas fa-check-circle"></i>
+                            <span>97.8% Accuracy</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <p class="card-description">
+                        WHO-validated AI system for tuberculosis screening from chest X-rays. 
+                        Supports mass screening programs and clinical diagnosis with comprehensive reporting.
+                    </p>
+                    <ul class="feature-list">
+                        <li><i class="fas fa-check"></i>Chest X-ray analysis</li>
+                        <li><i class="fas fa-check"></i>WHO CAD4TB validated</li>
+                        <li><i class="fas fa-check"></i>Multi-language reporting</li>
+                        <li><i class="fas fa-check"></i>Batch processing capability</li>
+                        <li><i class="fas fa-check"></i>Integration with PACS systems</li>
+                    </ul>
+                    <div class="card-stats">
+                        <div class="stat-item">
+                            <span class="stat-value">97.8%</span>
+                            <span class="stat-label">Sensitivity</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">96.3%</span>
+                            <span class="stat-label">Specificity</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-value">&lt;15s</span>
+                            <span class="stat-label">Analysis Time</span>
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <button class="start-btn">
+                            <i class="fas fa-play"></i>
+                            <span>Start Analysis</span>
+                        </button>
+                        <div class="card-status">
+                            <i class="fas fa-circle"></i>
+                            <span>System Online</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="info-section">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4 class="info-title">Clinical Grade Security</h4>
+                    <p class="info-description">
+                        End-to-end encryption, HIPAA compliance, and secure cloud infrastructure 
+                        ensure patient data protection at all times.
+                    </p>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-microscope"></i>
+                    </div>
+                    <h4 class="info-title">Evidence-Based AI</h4>
+                    <p class="info-description">
+                        All algorithms are trained on diverse, clinically validated datasets 
+                        and continuously updated with latest medical research.
+                    </p>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h4 class="info-title">Seamless Integration</h4>
+                    <p class="info-description">
+                        Compatible with major PACS, EMR systems, and hospital workflows 
+                        for streamlined diagnostic processes.
+                    </p>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h4 class="info-title">24/7 Clinical Support</h4>
+                    <p class="info-description">
+                        Dedicated clinical support team available around the clock 
+                        for technical assistance and consultation.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="compliance-footer">
+            <div class="compliance-badges">
+                <div class="compliance-badge">
+                    <i class="fas fa-certificate"></i>
+                    <span>FDA 510(k) Cleared</span>
+                </div>
+                <div class="compliance-badge">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>HIPAA Compliant</span>
+                </div>
+                <div class="compliance-badge">
+                    <i class="fas fa-globe"></i>
+                    <span>ISO 13485 Certified</span>
+                </div>
+                <div class="compliance-badge">
+                    <i class="fas fa-lock"></i>
+                    <span>SOC 2 Type II</span>
+                </div>
+                <div class="compliance-badge">
+                    <i class="fas fa-check-double"></i>
+                    <span>CE Marked</span>
+                </div>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--medium-gray); margin-top: 16px;">
+                This device is intended for use by qualified healthcare professionals as an aid in medical diagnosis. 
+                Final diagnosis should always be made BY @Omanhene.
+            </p>
+        </div>
+    </main>
+
+    <script>
+        function showLoading(type) {
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = overlay.querySelector('p');
+            
+            if (type === 'stroke') {
+                loadingText.textContent = 'Initializing stroke detection module...';
+            } else if (type === 'tuberculosis') {
+                loadingText.textContent = 'Initializing tuberculosis detection module...';
+            }
+            
+            overlay.style.display = 'flex';
+        }
+
+        // Add entrance animations
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.diagnostic-card');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach((entry, index) => {
+                    if (entry.isIntersecting) {
+                        setTimeout(() => {
+                            entry.target.style.opacity = '1';
+                            entry.target.style.transform = 'translateY(0)';
+                        }, index * 150);
+                    }
+                });
+            });
+
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                observer.observe(card);
+            });
+        });
+
+        // System status simulation
+        function updateSystemStatus() {
+            const statusElements = document.querySelectorAll('.card-status');
+            statusElements.forEach(status => {
+                const icon = status.querySelector('i');
+                icon.style.color = 'var(--success-green)';
+                status.querySelector('span').textContent = 'System Online';
+            });
+        }
+
+        updateSystemStatus();
+        setInterval(updateSystemStatus, 30000); // Update every 30 seconds
+
+        //PWA INTEGRATING CODES 
+        if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register("/static/service-worker.js")
+      .then(function (reg) {
+        console.log("Service Worker Registered!", reg);
+      }).catch(function (err) {
+        console.error("Service Worker registration failed: ", err);
+      });
+  }
+  //END OF PWA INTEGRATING CODES
+    </script>
+</body>
+</html>
+

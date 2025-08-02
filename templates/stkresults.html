@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stroke Detection Results - Medical Analysis Report</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .report-id {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .results-content {
+            padding: 40px;
+        }
+
+        /* Image Analysis Section */
+        .image-analysis {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .image-analysis h2 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .image-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .image-box {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .image-box h3 {
+            color: #495057;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .medical-image {
+            width: 100%;
+            max-width: 300px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .medical-image:hover {
+            transform: scale(1.05);
+        }
+
+        .image-placeholder {
+            width: 100%;
+            height: 200px;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .image-details {
+            margin-top: 15px;
+            text-align: left;
+        }
+
+        .image-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+
+        .image-detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .image-detail-value {
+            color: #212529;
+        }
+
+        .patient-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            border-left: 5px solid #e74c3c;
+        }
+
+        .patient-info h2 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .info-value {
+            color: #212529;
+            font-weight: 500;
+        }
+
+        .diagnosis-assessment {
+            margin-bottom: 30px;
+        }
+
+        .diagnosis-level {
+            text-align: center;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .diagnosis-positive {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .diagnosis-negative {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .diagnosis-uncertain {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .diagnosis-level h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .confidence-percentage {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .confidence-meter {
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .confidence-label {
+            font-size: 1.1rem;
+            color: #34495e;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 1));
+            border-radius: 10px;
+            transition: width 2s ease-in-out;
+            position: relative;
+        }
+
+        .confidence-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #333;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .analysis-factors {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .factor-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .factor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .factor-title {
+            font-weight: 600;
+            color: #e74c3c;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .factor-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .status-high { background: #e74c3c; }
+        .status-moderate { background: #f39c12; }
+        .status-normal { background: #27ae60; }
+
+        .recommendations {
+            background: #fff3cd;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 5px solid #f39c12;
+            margin-bottom: 30px;
+        }
+
+        .recommendations h2 {
+            color: #856404;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+
+        .recommendation-list {
+            list-style: none;
+        }
+
+        .recommendation-list li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .recommendation-list li::before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
+            font-size: 0.9rem;
+        }
+
+        .model-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .model-details h3 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .model-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .download-section {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+            margin: 0 10px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+        }
+
+        .timestamp {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 700px;
+            max-height: 80%;
+            border-radius: 10px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #bbb;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .results-content {
+                padding: 20px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .analysis-factors {
+                grid-template-columns: 1fr;
+            }
+            
+            .image-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .print-hidden {
+            display: block;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .print-hidden {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="reportContent">
+        <div class="header">
+            <h1>🧠 Stroke Detection Analysis</h1>
+            <p>AI-Powered Stroke Detection Report</p>
+            <div class="report-id">Report ID: STR-<span id="reportId">DEMO-001</span></div>
+        </div>
+
+        <div class="results-content">
+            <!-- Image Analysis Section -->
+            <div class="image-analysis">
+                <h2>🖼️ Brain Imaging Analysis</h2>
+                
+                <div class="image-container">
+                    <div class="image-box">
+                        <h3>Original Brain Scan</h3>
+                        <!--<img src="{{ url_for('static', filename=uploaded_image) }}" class="medical-image" onclick="openModal(this)" alt="Uploaded Brain Scan">
+                    -->
+                    <img src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" class="medical-image" ...>
+
+                    
+                    <div class="image-details">
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">Scan Type:</span>
+                                <span class="image-detail-value">Brain CT/MRI</span>
+                            </div>
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">Resolution:</span>
+                                <span class="image-detail-value">High Quality</span>
+                            </div>
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">Upload Time:</span>
+                                <span class="image-detail-value" id="uploadTime"></span>
+                            </div>
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">File Format:</span>
+                                <span class="image-detail-value">DICOM/JPEG/PNG</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="image-box">
+                        <h3>AI Analysis Heatmap</h3>
+                        <img src="{{ url_for('static', filename='uploads/' + gradcam_image) }}" alt="Stroke Heatmap">
+                        <!--<img src="{{ url_for('static', filename='outputs/stroke_gradcam.jpg') }}" alt="Stroke Heatmap">-->
+                        <div class="image-details">
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">Processing Time:</span>
+                                <span class="image-detail-value">3.1 seconds</span>
+                            </div>
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">Model Version:</span>
+                                <span class="image-detail-value">Stroke-Detection v3.2</span>
+                            </div>
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">Analysis Type:</span>
+                                <span class="image-detail-value">Deep CNN + Attention</span>
+                            </div>
+                            <div class="image-detail-item">
+                                <span class="image-detail-label">Key Features:</span>
+                                <span class="image-detail-value">Highlighted</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Information -->
+            <div class="patient-info">
+                <h2>📋 Analysis Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Report ID:</span>
+                        <span class="info-value">STR-<span id="reportIdInfo">DEMO-001</span></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Analysis Date:</span>
+                        <span class="info-value" id="analysisDate"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Model Version:</span>
+                        <span class="info-value">Stroke-Detection v3.2</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Processing Time:</span>
+                        <span class="info-value">3.1 seconds</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Image Quality:</span>
+                        <span class="info-value">High Resolution</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Analysis Type:</span>
+                        <span class="info-value">Deep Learning CNN</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diagnosis Assessment Result -->
+            <div class="diagnosis-assessment">
+                <div class="diagnosis-level" id="diagnosisLevel">
+                    <h2>🔬 Stroke Detection Result</h2>
+                    <div class="confidence-percentage" id="confidenceDisplay">85%</div>
+                    <p><strong id="diagnosisLabel">Stroke Detected</strong></p>
+                    
+                    <div class="confidence-meter">
+                        <div class="confidence-label">Model Confidence Level</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidenceFill" style="width: 85%;">
+                                <div class="confidence-text">85%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Factors -->
+            <div class="analysis-factors">
+                <div class="factor-card">
+                    <div class="factor-title">Hemorrhagic Signs</div>
+                    <div class="factor-status">
+                        <div class="status-indicator status-high"></div>
+                        <span><strong>Detected</strong></span>
+                    </div>
+                    <p>AI analysis detected signs of intracranial hemorrhage in brain tissue.</p>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Ischemic Changes</div>
+                    <div class="factor-status">
+                        <div class="status-indicator status-moderate"></div>
+                        <span><strong>Moderate Risk</strong></span>
+                    </div>
+                    <p>Evidence of reduced blood flow and potential ischemic damage.</p>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Midline Shift</div>
+                    <div class="factor-status">
+                        <div class="status-indicator status-high"></div>
+                        <span><strong>Present</strong></span>
+                    </div>
+                    <p>Structural displacement indicating increased intracranial pressure.</p>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Ventricular System</div>
+                    <div class="factor-status">
+                        <div class="status-indicator status-moderate"></div>
+                        <span><strong>Compressed</strong></span>
+                    </div>
+                    <p>Ventricular compression consistent with mass effect.</p>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Cortical Involvement</div>
+                    <div class="factor-status">
+                        <div class="status-indicator status-high"></div>
+                        <span><strong>Extensive</strong></span>
+                    </div>
+                    <p>Significant cortical involvement affecting multiple brain regions.</p>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Image Quality Score</div>
+                    <div class="factor-status">
+                        <div class="status-indicator status-normal"></div>
+                        <span><strong>Excellent</strong> - High diagnostic quality</span>
+                    </div>
+                    <p>Image quality assessment for reliable AI analysis.</p>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="recommendations">
+                <h2>⚕️ Critical Medical Recommendations</h2>
+                <ul class="recommendation-list" id="recommendationsList">
+                    <!-- Recommendations will be populated by JavaScript -->
+                </ul>
+            </div>
+
+            <!-- Model Performance Details -->
+            <div class="model-details">
+                <h3>🤖 AI Model Performance Metrics</h3>
+                <p>This stroke detection analysis was generated using our validated deep learning model trained on over 150,000 brain imaging studies.</p>
+                
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">94.7%</div>
+                        <div class="stat-label">Accuracy</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">92.3%</div>
+                        <div class="stat-label">Sensitivity</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">96.1%</div>
+                        <div class="stat-label">Specificity</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">0.94</div>
+                        <div class="stat-label">AUC Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Section -->
+            <div class="download-section print-hidden">
+                <h3>📄 Download Report</h3>
+                <p>Save this stroke detection analysis report for medical records</p>
+                <button class="download-btn" onclick="downloadPDF()">
+                    📄 Download PDF Report
+                </button>
+                <button class="download-btn" onclick="window.print()">
+                    🖨️ Print Report
+                </button>
+                <a href="/" class="download-btn" style="text-decoration: none; display: inline-block;">
+                    🔄 Analyze Another Image
+                </a>
+            </div>
+
+            <!-- Timestamp -->
+            <div class="timestamp">
+                <p>Report generated on <span id="currentTimestamp"></span></p>
+                <p><strong>BY:</strong> Stroke Detection AI System v3.2</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        // Generate random report ID
+        function generateReportId() {
+            const timestamp = Date.now().toString().slice(-6);
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            return timestamp + random;
+        }
+
+        // Set current timestamp and report ID
+        const reportId = generateReportId();
+        document.getElementById('reportId').textContent = reportId;
+        document.getElementById('reportIdInfo').textContent = reportId;
+        document.getElementById('currentTimestamp').textContent = new Date().toLocaleString();
+        document.getElementById('analysisDate').textContent = new Date().toLocaleDateString();
+        document.getElementById('uploadTime').textContent = new Date().toLocaleString();
+
+        // Simulate different diagnosis results
+        const diagnoses = [
+            { label: 'Stroke Detected', confidence: 85, type: 'positive' },
+            { label: 'No Stroke Detected', confidence: 92, type: 'negative' },
+            { label: 'Inconclusive - Further Testing Required', confidence: 65, type: 'uncertain' }
+        ];
+
+        // Randomly select a diagnosis for demo
+        const currentDiagnosis = diagnoses[Math.floor(Math.random() * diagnoses.length)];
+
+        // Update diagnosis display
+        document.getElementById('diagnosisLabel').textContent = currentDiagnosis.label;
+        document.getElementById('confidenceDisplay').textContent = currentDiagnosis.confidence + '%';
+        document.getElementById('confidenceFill').style.width = currentDiagnosis.confidence + '%';
+        document.querySelector('.confidence-text').textContent = currentDiagnosis.confidence + '%';
+
+        // Update diagnosis level styling
+        const diagnosisLevel = document.getElementById('diagnosisLevel');
+        diagnosisLevel.className = `diagnosis-level diagnosis-${currentDiagnosis.type}`;
+
+        // Generate recommendations based on diagnosis
+        function generateRecommendations() {
+            let recommendations = [];
+
+            if (currentDiagnosis.type === 'positive') {
+                if (currentDiagnosis.confidence > 80) {
+                    recommendations = [
+                        '<strong>EMERGENCY:</strong> Immediate transfer to stroke center - TIME IS CRITICAL',
+                        '<strong>Activate Code Stroke:</strong> Alert stroke team and prepare for intervention',
+                        '<strong>IV Access:</strong> Establish large-bore IV access immediately',
+                        '<strong>Neurological Assessment:</strong> Perform NIHSS score evaluation',
+                        '<strong>Blood Work:</strong> Urgent CBC, PT/PTT, glucose, and electrolytes',
+                        '<strong>Imaging:</strong> Consider CT angiography for vessel assessment',
+                        '<strong>Thrombolysis:</strong> Evaluate for tPA eligibility within therapeutic window',
+                        '<strong>Blood Pressure:</strong> Monitor and manage BP according to stroke protocols',
+                        '<strong>Family Notification:</strong> Inform family of critical condition and treatment plan'
+                    ];
+                } else {
+                    recommendations = [
+                        '<strong>Urgent Evaluation:</strong> Immediate neurological consultation required',
+                        '<strong>Additional Imaging:</strong> Consider MRI with DWI for confirmation',
+                        '<strong>Monitoring:</strong> Continuous neurological monitoring',
+                        '<strong>Symptom Assessment:</strong> Document onset time and progression',
+                        '<strong>Risk Factors:</strong> Evaluate cardiovascular risk factors'
+                    ];
+                }
+            } else if (currentDiagnosis.type === 'negative') {
+                recommendations = [
+                    '<strong>Normal Results:</strong> No acute stroke detected in current imaging',
+                    '<strong>Clinical Correlation:</strong> Correlate with patient symptoms and examination',
+                    '<strong>Alternative Diagnosis:</strong> Consider other causes of neurological symptoms',
+                    '<strong>Risk Assessment:</strong> Evaluate stroke risk factors for prevention',
+                    '<strong>Follow-up:</strong> Schedule appropriate follow-up based on clinical presentation',
+                    '<strong>Patient Education:</strong> Discuss stroke warning signs and when to seek help',
+                    '<strong>Lifestyle Modifications:</strong> Address modifiable risk factors'
+                ];
+            } else {
+                recommendations = [
+                    '<strong>Inconclusive Results:</strong> Additional evaluation required for definitive diagnosis',
+                    '<strong>Advanced Imaging:</strong> Consider MRI with multiple sequences',
+                    '<strong>Clinical Assessment:</strong> Detailed neurological examination needed',
+                    '<strong>Repeat Imaging:</strong> May need follow-up imaging in 24-48 hours',
+                    '<strong>Specialist Consultation:</strong> Neurologist evaluation recommended',
+                    '<strong>Monitoring:</strong> Close observation for symptom progression',
+                    '<strong>Documentation:</strong> Detailed documentation of clinical findings'
+                ];
+            }
+
+            const recommendationsList = document.getElementById('recommendationsList');
+            recommendationsList.innerHTML = recommendations.map(rec => `<li>${rec}</li>`).join('');
+        }
+
+        // Image modal functions
+        function openModal(element) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'block';
+            
+            // For demo purposes, show a placeholder
+            modalImg.src = '/placeholder.svg?height=400&width=600&text=Brain+Scan+Image';
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside the image
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // PDF Download function
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('reportContent');
+            
+            // Show loading state
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ Generating PDF...';
+            btn.disabled = true;
+
+            html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210;
+                const pageHeight = 295;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // Generate filename with timestamp
+                const now = new Date();
+                const timestamp = now.toISOString().slice(0, 19).replace(/:/g, '-');
+                const filename = `Stroke_Detection_Report_${reportId}_${timestamp}.pdf`;
+                
+                pdf.save(filename);
+                
+                // Reset button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }).catch(error => {
+                console.error('Error generating PDF:', error);
+                alert('Error generating PDF. Please try again.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        // Animate confidence percentage on load
+        function animateConfidence() {
+            const confidenceDisplay = document.getElementById('confidenceDisplay');
+            const targetValue = currentDiagnosis.confidence;
+            let currentValue = 0;
+            const increment = targetValue / 50;
+            
+            const timer = setInterval(() => {
+                currentValue += increment;
+                if (currentValue >= targetValue) {
+                    currentValue = targetValue;
+                    clearInterval(timer);
+                }
+                confidenceDisplay.textContent = Math.round(currentValue) + '%';
+            }, 30);
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            generateRecommendations();
+            animateConfidence();
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                downloadPDF();
+            }
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>

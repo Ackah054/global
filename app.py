@@ -162,6 +162,7 @@ from datetime import datetime
 from PIL import Image
 import tensorflow as tf
 import cv2
+from tensorflow.keras.layers import InputLayer
 
 app = Flask(__name__)
 
@@ -222,7 +223,8 @@ def predict_tb():
         img_array = tf.keras.applications.resnet50.preprocess_input(img_array)
         img_array = np.expand_dims(img_array, axis=0)
 
-        model = load_model(TB_MODEL_PATH, compile=False)
+        model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
+       # model = load_model(TB_MODEL_PATH, compile=False)
         prediction = model.predict(img_array)[0][0]
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"

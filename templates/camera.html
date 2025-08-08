@@ -360,9 +360,35 @@
         align-items: center;
       }
     }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(108, 117, 125, 0.9);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .back-btn:hover {
+      background: rgba(90, 98, 104, 0.9);
+      transform: translateY(-2px);
+    }
+
+
+    
   </style>
 </head>
 <body>
+
+      <a href="/" class="back-btn">← Back to Menu</a>
+    
   <div class="container">
     <div class="header">
       <div class="logo">📷</div>
@@ -395,28 +421,26 @@
       <span>OR</span>
     </div>
 
-    <!-- Upload Section --
-    <div class="upload-section" onclick="document.getElementById('imageInput').click()">
-      <div class="upload-icon">📁</div>
-      <div class="upload-text">Click here to upload a chest X-ray image</div>
-      <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
-      <button class="btn btn-info">
-        📤 Choose File
-      </button>
-    </div>
+    <form id="imageUploadForm" enctype="multipart/form-data">
+  <div class="upload-section" onclick="document.getElementById('imageInput').click()">
+    <div class="upload-icon">📁</div>
+    <div class="upload-text">Click here to upload a chest X-ray image</div>
+    <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;" onchange="previewImage(event)">
+    <button type="button" class="btn btn-info">📤 Choose File</button>
+  </div>
 
-    <img id="uploadPreview" alt="Uploaded Image Preview" />
-    <div class="status-message" id="uploadStatus"></div>
+  <img id="uploadPreview" alt="Uploaded Image Preview" />
+  <div class="status-message" id="uploadStatus"></div>
 
-    <!- Results Button (Initially Hidden) --
-    <div class="controls">
-      <button class="btn btn-results hidden" id="resultsBtn" onclick="analyzeImage()">
-        🔬 ANALYZE FOR TB
-      </button>
-    </div>
-  </div>-->
+  <div class="controls">
+    <button type="submit" class="btn btn-results" id="resultsBtn">
+      🔬 ANALYZE FOR TB
+    </button>
+  </div>
+</form>
 
-<!-- Upload Section -->
+
+<!-- Upload Section --
 <form id="tbForm" action="{{ url_for('predict_tb') }}" method="POST" enctype="multipart/form-data">
   <div class="upload-section" onclick="document.getElementById('imageInput').click()">
     <div class="upload-icon">📁</div>
@@ -428,13 +452,13 @@
   <img id="uploadPreview" alt="Uploaded Image Preview" />
   <div class="status-message" id="uploadStatus"></div>
 
-  <!-- Results Button (Now a Submit Button) -->
+  <!- Results Button (Now a Submit Button) --
   <div class="controls">
     <button type="submit" class="btn btn-results" id="resultsBtn">
       🔬 ANALYZE FOR TB
     </button>
   </div>
-</form>
+</form>-->
 <!--end of forms-->
 
   <div class="loading" id="loadingScreen">
@@ -620,6 +644,84 @@ window.addEventListener('beforeunload', () => {
     stream.getTracks().forEach(track => track.stop());
   }
 });
+
+
+
+
+//new codes added  
+
+
+// 🔁 Override form submission to combine image + stored form data
+document.getElementById('imageUploadForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+
+  const imageFile = document.getElementById('imageInput').files[0];
+  if (!imageFile) {
+    alert("Please select or capture an image.");
+    return;
+  }
+
+  // Retrieve form data from localStorage
+  const formDataJSON = localStorage.getItem('tbPatientData');
+  if (!formDataJSON) {
+    alert("Patient form data missing. Please go back and fill the form.");
+    return;
+  }
+
+  const patientData = JSON.parse(formDataJSON);
+
+  const formData = new FormData();
+  formData.append('image', imageFile);
+
+  for (const key in patientData) {
+    if (Array.isArray(patientData[key])) {
+      patientData[key].forEach(val => formData.append(key, val));
+    } else {
+      formData.append(key, patientData[key]);
+    }
+  }
+
+  // Show loading screen
+  document.getElementById('loadingScreen').style.display = 'flex';
+
+  // Submit the full form to /predict_tb
+  fetch('/predict_tb', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => {
+    //if (response.redirected) {
+     // window.location.href = response.url;
+    //} else {
+     // return response.json().then(data => {
+      //  alert("Error: " + (data.error || "Something went wrong."));
+      //  document.getElementById('loadingScreen').style.display = 'none';
+     // });
+   // }
+
+     if (response.ok) {
+  return response.text().then(html => {
+    document.open();
+    document.write(html);
+    document.close();
+  });
+} else {
+  return response.json().then(data => {
+    alert("Error: " + (data.error || "Something went wrong."));
+    document.getElementById('loadingScreen').style.display = 'none';
+  });
+}
+
+
+  })
+  .catch(error => {
+    console.error("❌ Upload error:", error);
+    alert("Upload failed.");
+    document.getElementById('loadingScreen').style.display = 'none';
+  });
+});
+
+
 </script>
 
 </body>

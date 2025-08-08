@@ -225,9 +225,30 @@
                 padding: 20px;
             }
         }
+
+        .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(108, 117, 125, 0.9);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .back-btn:hover {
+      background: rgba(90, 98, 104, 0.9);
+      transform: translateY(-2px);
+    }
     </style>
 </head>
 <body>
+    <a href="/" class="back-btn">← Back to Menu</a>
     <div class="container">
         <div class="header">
             <h1>TB Patient Registration</h1>
@@ -239,7 +260,9 @@
                 Form validated successfully! Redirecting to camera...
             </div>
 
-           <form id="tbPatientForm">
+             <form id="tbPatientForm" action="/predict_tb" method="POST" enctype="multipart/form-data">
+           <!--<form id="tbPatientForm" >-->
+
               <!--Personal Information Section -->
                 <div class="form-section">
                     <h2 class="section-title">Personal Information</h2>
@@ -396,12 +419,22 @@
                         <textarea id="additionalInfo" name="additionalInfo" rows="4" placeholder="Please provide any additional relevant medical history or information..."></textarea>
                     </div>
                 </div>
+                <!-- new things added--
+                 <div class="form-group">
+    <label for="image">Upload Chest X-ray <span class="required">*</span></label>
+    <input type="file" id="image" name="image" required>
+</div>-->
+
 
                 <!-- Action Buttons -->
                 <div class="button-container">
                    <button type="button" class="btn btn-primary" id="uploadBtn">
                         📷 Upload Image
                     </button>
+                   <!---- <button type="submit" class="btn btn-primary">
+    📤 Submit for Analysis
+</button>-->
+
                    
 
                     <button type="button" class="btn btn-secondary" id="resetBtn">

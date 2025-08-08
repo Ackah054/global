@@ -655,7 +655,6 @@
                 </div>
             </div>
 
-            <!--bfasadfbsdbsfsfgfsb
             <div class="info-grid">
     <div class="info-item">
         <span class="info-label">Patient Name:</span>
@@ -682,7 +681,23 @@
         <span class="info-value">{{ address }}, {{ city }}, {{ state }}, {{ country }}</span>
     </div>
 </div>
--->
+<div class="info-item">
+    <span class="info-label">Symptoms:</span>
+    <span class="info-value">{{ symptoms | join(", ") }}</span>
+</div>
+
+<div class="info-item">
+    <span class="info-label">Risk Factors:</span>
+    <span class="info-value">{{ risk_factors | join(", ") }}</span>
+</div>
+
+<div class="info-item">
+    <span class="info-label">Additional Info:</span>
+    <span class="info-value">{{ additional_info }}</span>
+</div>
+
+
+
 
             <!-- Diagnosis Assessment Result -->
             <div class="diagnosis-assessment">
@@ -694,14 +709,14 @@
                     <div class="confidence-meter">
                         <div class="confidence-label">Model Confidence Level</div>
                         <div class="confidence-bar">
-                            <div class="confidence-fill" style="width: {{ confidence }}%;">
+                            <div class="confidence-fill" style="width: {{ confidence }}%;"
                                 <div class="confidence-text">{{ confidence }}%</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
+             
             <!-- Analysis Factors -->
             <div class="analysis-factors">
                 <div class="factor-card">
@@ -767,7 +782,7 @@
                 </ul>
             </div>
 
-            <!-- Model Performance Details -->
+            <!-- Model Performance Details --
             <div class="model-details">
                 <h3>🤖 AI Model Performance Metrics</h3>
                 <p>This TB detection analysis was generated using our validated deep learning model trained on over 100,000 chest X-ray images.</p>
@@ -791,6 +806,7 @@
                     </div>
                 </div>
             </div>
+            -->
 
             <!-- Download Section -->
             <div class="download-section print-hidden">
@@ -823,10 +839,13 @@
 
     <script>
         // Set current timestamp and debug info
+
+
         document.getElementById('currentTimestamp').textContent = new Date().toLocaleString();
         document.getElementById('analysisDate').textContent = new Date().toLocaleDateString();
         document.getElementById('uploadTime').textContent = new Date().toLocaleString();
         document.getElementById('currentUrl').textContent = window.location.href;
+
 
         // Get image variables from template
         const imageVars = {

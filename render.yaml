@@ -7,4 +7,6 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+      - key: PYTHON_VERSION
+        value: 3.10.13  # This forces Render to use the correct version
     plan: free

@@ -8,17 +8,20 @@ ENV PYTHONUNBUFFERED 1
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (added wget + unzip for downloading model)
-RUN apt-get update && apt-get install -y gcc libgl1-mesa-glx wget unzip && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (added wget for downloading models)
+RUN apt-get update && apt-get install -y gcc libgl1-mesa-glx wget && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Download stroke model from Google Drive at build time
-RUN wget --no-check-certificate 'https://drive.google.com/uc?export=download&id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5' -O stroke_detection_resnet50.h5
+# Download TB model from Google Drive
+RUN wget --no-check-certificate "https://drive.google.com/uc?export=download&id=1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y" -O tb_detection_model.h5
 
-# Copy app files
+# Download Stroke model from Google Drive
+RUN wget --no-check-certificate "https://drive.google.com/uc?export=download&id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5" -O stroke_detection_resnet50.h5
+
+# Copy all app files
 COPY . .
 
 # Expose port

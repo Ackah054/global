@@ -181,6 +181,12 @@ if __name__ == '__main__':
 """
 
 
+
+
+
+
+
+
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
@@ -201,8 +207,8 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # ==== Model paths ====
-TB_MODEL_PATH = 'tb_detection_model.h5'              # Stored locally in repo or built into Docker
-STROKE_MODEL_PATH = 'stroke_detection_resnet50.h5'   # Downloaded at Docker build time
+TB_MODEL_PATH = 'tb_detection_model.h5'              
+STROKE_MODEL_PATH = 'stroke_detection_resnet50.h5'   
 
 # ==== Preload models at startup ====
 tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
@@ -233,13 +239,6 @@ def predict_tb():
         email = request.form.get('email')
         address = request.form.get('address')
         city = request.form.get('city')
-        state = request.form.get('state')
-        country = request.form.get('country')
-        previous_tb = request.form.get('previousTB')
-        symptom_duration = request.form.get('symptomDuration')
-        additional_info = request.form.get('additionalInfo')
-        symptoms = request.form.getlist('symptoms')
-        risk_factors = request.form.getlist('riskFactors')
 
         # --- Process image ---
         file = request.files['image']

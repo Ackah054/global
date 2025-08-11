@@ -192,7 +192,6 @@ from datetime import datetime
 from PIL import Image
 import tensorflow as tf
 import cv2
-import requests
 
 app = Flask(__name__)
 
@@ -201,18 +200,9 @@ UPLOAD_FOLDER = 'static/uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# ==== Model paths & URLs ====
-TB_MODEL_PATH = 'tb_detection_model.h5'  # still stored locally in repo
-STROKE_MODEL_PATH = 'stroke_detection_resnet50.h5'
-STROKE_MODEL_URL = "https://drive.google.com/uc?export=download&id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5"
-
-# ==== Download stroke model if missing ====
-if not os.path.exists(STROKE_MODEL_PATH):
-    print("📥 Downloading stroke model from Google Drive...")
-    r = requests.get(STROKE_MODEL_URL)
-    with open(STROKE_MODEL_PATH, 'wb') as f:
-        f.write(r.content)
-    print("✅ Stroke model downloaded.")
+# ==== Model paths ====
+TB_MODEL_PATH = 'tb_detection_model.h5'              # Stored locally in repo or built into Docker
+STROKE_MODEL_PATH = 'stroke_detection_resnet50.h5'   # Downloaded at Docker build time
 
 # ==== Preload models at startup ====
 tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})

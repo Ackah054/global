@@ -5,6 +5,10 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Disable GPU for TensorFlow to avoid CUDA errors
+ENV CUDA_VISIBLE_DEVICES=-1
+ENV TF_CPP_MIN_LOG_LEVEL=2
+
 # Set working directory inside the container
 WORKDIR /app
 

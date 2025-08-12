@@ -198,6 +198,7 @@ from datetime import datetime
 from PIL import Image
 import tensorflow as tf
 import cv2
+import gdown
 
 app = Flask(__name__)
 
@@ -206,11 +207,23 @@ UPLOAD_FOLDER = 'static/uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# ==== Model paths ====
-TB_MODEL_PATH = 'tb_detection_model.h5'              
-STROKE_MODEL_PATH = 'stroke_detection_resnet50.h5'   
+# ==== Google Drive model URLs ====
+TB_MODEL_URL = "https://drive.google.com/uc?export=download&id=1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y"
+STROKE_MODEL_URL = "https://drive.google.com/uc?export=download&id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5"
 
-# ==== Preload models at startup ====
+TB_MODEL_PATH = "tb_detection_model.h5"
+STROKE_MODEL_PATH = "stroke_detection_resnet50.h5"
+
+# ==== Download models if missing ====
+if not os.path.exists(TB_MODEL_PATH):
+    print("📥 Downloading TB model...")
+    gdown.download(TB_MODEL_URL, TB_MODEL_PATH, quiet=False)
+
+if not os.path.exists(STROKE_MODEL_PATH):
+    print("📥 Downloading Stroke model...")
+    gdown.download(STROKE_MODEL_URL, STROKE_MODEL_PATH, quiet=False)
+
+# ==== Load models ====
 tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
 stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'preprocess_input': preprocess_input})
 
@@ -230,7 +243,7 @@ def show_tb_camera():
 @app.route('/predict_tb', methods=['POST'])
 def predict_tb():
     try:
-        # --- Get form data ---
+        # Form data
         first_name = request.form.get('firstName')
         last_name = request.form.get('lastName')
         age = request.form.get('age')
@@ -240,7 +253,7 @@ def predict_tb():
         address = request.form.get('address')
         city = request.form.get('city')
 
-        # --- Process image ---
+        # Image
         file = request.files['image']
         if file.filename == '':
             return jsonify({'error': 'No image selected'}), 400

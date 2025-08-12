@@ -1,9 +1,9 @@
-# Use official Python 3.10 slim image
+# Use official Python 3.10 image
 FROM python:3.10-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Set working directory
 WORKDIR /app
@@ -11,17 +11,13 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y gcc libgl1-mesa-glx wget && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Copy requirements file
 COPY requirements.txt .
+
+# Install Python dependencies
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Download TB model from Google Drive
-RUN gdown --id 1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y -O tb_detection_model.h5
-
-# Download Stroke model from Google Drive
-RUN gdown --id 1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5 -O stroke_detection_resnet50.h5
-
-# Copy all app files
+# Copy application code
 COPY . .
 
 # Expose port

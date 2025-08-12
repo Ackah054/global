@@ -1,24 +1,19 @@
-# Use official Python 3.10 image
+# Use official Python 3.10 slim image
 FROM python:3.10-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (added wget for other downloads) + gdown requirements
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libgl1-mesa-glx \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y gcc libgl1-mesa-glx wget && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
-# Add gdown directly to requirements
-RUN pip install --upgrade pip && pip install -r requirements.txt && pip install gdown
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Download TB model from Google Drive
 RUN gdown --id 1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y -O tb_detection_model.h5

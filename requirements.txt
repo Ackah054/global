@@ -2,6 +2,7 @@ Flask==2.3.3
 tensorflow==2.19.0
 keras==3.10.0
 Pillow==9.5.0
+numpy==1.26.4
 reportlab==4.0.4
-opencv-python-headless==4.8.0.74
+opencv-python-headless==4.9.0.80
 gunicorn==21.2.0

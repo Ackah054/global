@@ -188,9 +188,7 @@ if __name__ == '__main__':
 
 
 import os
-# ===== Prevent CUDA/GPU usage and suppress TF logs =====
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU (force CPU)
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from tensorflow.keras.models import load_model
@@ -206,7 +204,7 @@ import gdown
 
 app = Flask(__name__)
 
-# ==== Upload folder ====
+# ==== Setup upload folder ====
 UPLOAD_FOLDER = 'static/uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -227,11 +225,12 @@ if not os.path.exists(STROKE_MODEL_PATH):
     print("📥 Downloading Stroke model...")
     gdown.download(STROKE_MODEL_URL, STROKE_MODEL_PATH, quiet=False)
 
-# ==== Load models ====
+# ==== Load models once on startup ====
 tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
 stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'preprocess_input': preprocess_input})
 
 # ==== Routes ====
+
 @app.route('/')
 def home():
     return render_template('choice.html')
@@ -240,14 +239,24 @@ def home():
 def tb_form():
     return render_template('tbforms.html')
 
-@app.route('/camera')
+@app.route('/camera', methods=['GET'])
 def show_tb_camera():
     return render_template('camera.html')
 
 @app.route('/predict_tb', methods=['POST'])
 def predict_tb():
     try:
-        # Get form data
+        # Form data
+        first_name = request.form.get('firstName')
+        last_name = request.form.get('lastName')
+        age = request.form.get('age')
+        gender = request.form.get('gender')
+        phone = request.form.get('phone')
+        email = request.form.get('email')
+        address = request.form.get('address')
+        city = request.form.get('city')
+
+        # Image
         file = request.files['image']
         if file.filename == '':
             return jsonify({'error': 'No image selected'}), 400
@@ -256,7 +265,6 @@ def predict_tb():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        # Preprocess
         image_pil = Image.open(filepath).convert('RGB')
         image_resized = image_pil.resize((224, 224))
         img_array = image.img_to_array(image_resized)
@@ -264,7 +272,7 @@ def predict_tb():
         img_array = np.expand_dims(img_array, axis=0)
 
         prediction = tb_model.predict(img_array)[0][0]
-        confidence = prediction * 100 if prediction > 0.5 else (1 - prediction) * 100
+        confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
 
         gradcam_filename = generate_gradcam(tb_model, img_array, filepath, 'conv4_block6_out')
@@ -275,7 +283,13 @@ def predict_tb():
             confidence=round(confidence, 1),
             uploaded_image=filename,
             gradcam_image=gradcam_filename,
-            report_id='TB-' + datetime.now().strftime('%Y%m%d%H%M%S')
+            report_id='TB-' + datetime.now().strftime('%Y%m%d%H%M%S'),
+            first_name=first_name,
+            last_name=last_name,
+            age=age,
+            gender=gender,
+            phone=phone,
+            city=city
         )
 
     except Exception as e:
@@ -290,7 +304,7 @@ def stroke_form():
 def predictAction():
     return redirect(url_for('show_stroke_camera'))
 
-@app.route('/stkcamera')
+@app.route('/stkcamera', methods=['GET'])
 def show_stroke_camera():
     return render_template('stkcamera.html')
 
@@ -312,7 +326,7 @@ def predict_stroke():
         img_array = np.expand_dims(img_array, axis=0)
 
         prediction = stroke_model.predict(img_array)[0][0]
-        confidence = prediction * 100 if prediction > 0.5 else (1 - prediction) * 100
+        confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
 
         gradcam_filename = generate_gradcam(stroke_model, img_array, filepath, 'conv4_block6_out')
@@ -332,7 +346,9 @@ def predict_stroke():
 
 # ==== Grad-CAM ====
 def generate_gradcam(model, img_array, img_path, layer_name='conv4_block6_out'):
-    grad_model = tf.keras.models.Model([model.inputs], [model.get_layer(layer_name).output, model.output])
+    grad_model = tf.keras.models.Model(
+        [model.inputs], [model.get_layer(layer_name).output, model.output]
+    )
     with tf.GradientTape() as tape:
         conv_outputs, predictions = grad_model(img_array)
         loss = predictions[:, 0]
@@ -341,7 +357,8 @@ def generate_gradcam(model, img_array, img_path, layer_name='conv4_block6_out'):
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
     conv_outputs = conv_outputs[0]
     heatmap = tf.reduce_sum(tf.multiply(pooled_grads, conv_outputs), axis=-1)
-    heatmap = np.maximum(heatmap, 0) / tf.reduce_max(heatmap)
+    heatmap = np.maximum(heatmap, 0)
+    heatmap /= tf.reduce_max(heatmap)
     heatmap = heatmap.numpy()
 
     img = cv2.imread(img_path)

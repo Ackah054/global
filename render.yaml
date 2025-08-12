@@ -3,10 +3,10 @@ services:
     name: global-app
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn app:app --bind 0.0.0.0:10000 --workers 2
     envVars:
       - key: FLASK_ENV
         value: production
       - key: PYTHON_VERSION
-        value: 3.10.13  # This forces Render to use the correct version
+        value: 3.10.13
     plan: free

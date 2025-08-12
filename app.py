@@ -371,4 +371,6 @@ def generate_gradcam(model, img_array, img_path, layer_name='conv4_block6_out'):
     return gradcam_filename
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)

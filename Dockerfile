@@ -42,4 +42,4 @@ COPY . .
 EXPOSE 10000
 
 # Run the app with Gunicorn using 2 workers to reduce memory load, bind to all interfaces on port 10000
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:10000", "--workers", "2", "--timeout", "120"]
+CMD exec gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120

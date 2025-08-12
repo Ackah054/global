@@ -2,24 +2,29 @@
 FROM python:3.10-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (added wget for downloading models)
-RUN apt-get update && apt-get install -y gcc libgl1-mesa-glx wget && rm -rf /var/lib/apt/lists/*
+# Install system dependencies (added wget for other downloads) + gdown requirements
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libgl1-mesa-glx \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Add gdown directly to requirements
+RUN pip install --upgrade pip && pip install -r requirements.txt && pip install gdown
 
 # Download TB model from Google Drive
-RUN wget --no-check-certificate "https://drive.google.com/uc?export=download&id=1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y" -O tb_detection_model.h5
+RUN gdown --id 1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y -O tb_detection_model.h5
 
 # Download Stroke model from Google Drive
-RUN wget --no-check-certificate "https://drive.google.com/uc?export=download&id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5" -O stroke_detection_resnet50.h5
+RUN gdown --id 1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5 -O stroke_detection_resnet50.h5
 
 # Copy all app files
 COPY . .

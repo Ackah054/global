@@ -5,7 +5,7 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Disable GPU for TensorFlow to avoid CUDA errors
+# Disable GPU usage to avoid CUDA errors on Render
 ENV CUDA_VISIBLE_DEVICES=-1
 ENV TF_CPP_MIN_LOG_LEVEL=2
 
@@ -42,8 +42,8 @@ RUN gdown https://drive.google.com/uc?id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5 -O st
 # Copy entire project files into the container
 COPY . .
 
-# Expose port 10000 for the app to listen on
+# Expose port 10000 (optional, Render mainly uses $PORT env variable)
 EXPOSE 10000
 
-# Run the app with Gunicorn using 2 workers to reduce memory load, bind to all interfaces on port 10000
+# Run the app with Gunicorn using 2 workers, binding to the port Render provides via $PORT
 CMD exec gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120

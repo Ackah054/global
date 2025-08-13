@@ -188,7 +188,8 @@ if __name__ == '__main__':
 
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU (force CPU)
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # Suppress TensorFlow logs
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from tensorflow.keras.models import load_model
@@ -200,36 +201,33 @@ from datetime import datetime
 from PIL import Image
 import tensorflow as tf
 import cv2
-import gdown
 
 app = Flask(__name__)
 
-# ==== Setup upload folder ====
 UPLOAD_FOLDER = 'static/uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# ==== Google Drive model URLs ====
-TB_MODEL_URL = "https://drive.google.com/uc?export=download&id=1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y"
-STROKE_MODEL_URL = "https://drive.google.com/uc?export=download&id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5"
-
 TB_MODEL_PATH = "tb_detection_model.h5"
 STROKE_MODEL_PATH = "stroke_detection_resnet50.h5"
 
-# ==== Download models if missing ====
-if not os.path.exists(TB_MODEL_PATH):
-    print("📥 Downloading TB model...")
-    gdown.download(TB_MODEL_URL, TB_MODEL_PATH, quiet=False)
+# Lazy-loaded model variables
+tb_model = None
+stroke_model = None
 
-if not os.path.exists(STROKE_MODEL_PATH):
-    print("📥 Downloading Stroke model...")
-    gdown.download(STROKE_MODEL_URL, STROKE_MODEL_PATH, quiet=False)
+def get_tb_model():
+    global tb_model
+    if tb_model is None:
+        print("📥 Loading TB model...")
+        tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
+    return tb_model
 
-# ==== Load models once on startup ====
-tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
-stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'preprocess_input': preprocess_input})
-
-# ==== Routes ====
+def get_stroke_model():
+    global stroke_model
+    if stroke_model is None:
+        print("📥 Loading Stroke model...")
+        stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'preprocess_input': preprocess_input})
+    return stroke_model
 
 @app.route('/')
 def home():
@@ -239,13 +237,15 @@ def home():
 def tb_form():
     return render_template('tbforms.html')
 
-@app.route('/camera', methods=['GET'])
+@app.route('/camera')
 def show_tb_camera():
     return render_template('camera.html')
 
 @app.route('/predict_tb', methods=['POST'])
 def predict_tb():
     try:
+        model = get_tb_model()
+
         # Form data
         first_name = request.form.get('firstName')
         last_name = request.form.get('lastName')
@@ -271,11 +271,11 @@ def predict_tb():
         img_array = preprocess_input(img_array)
         img_array = np.expand_dims(img_array, axis=0)
 
-        prediction = tb_model.predict(img_array)[0][0]
+        prediction = model.predict(img_array)[0][0]
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
 
-        gradcam_filename = generate_gradcam(tb_model, img_array, filepath, 'conv4_block6_out')
+        gradcam_filename = generate_gradcam(model, img_array, filepath, 'conv4_block6_out')
 
         return render_template(
             'tbresults.html',
@@ -291,7 +291,6 @@ def predict_tb():
             phone=phone,
             city=city
         )
-
     except Exception as e:
         print(f"❌ TB Prediction Error: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
@@ -304,13 +303,15 @@ def stroke_form():
 def predictAction():
     return redirect(url_for('show_stroke_camera'))
 
-@app.route('/stkcamera', methods=['GET'])
+@app.route('/stkcamera')
 def show_stroke_camera():
     return render_template('stkcamera.html')
 
 @app.route('/predict_stroke', methods=['POST'])
 def predict_stroke():
     try:
+        model = get_stroke_model()
+
         file = request.files['image']
         if file.filename == '':
             return jsonify({'error': 'No image selected'}), 400
@@ -325,11 +326,11 @@ def predict_stroke():
         img_array = preprocess_input(img_array)
         img_array = np.expand_dims(img_array, axis=0)
 
-        prediction = stroke_model.predict(img_array)[0][0]
+        prediction = model.predict(img_array)[0][0]
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
 
-        gradcam_filename = generate_gradcam(stroke_model, img_array, filepath, 'conv4_block6_out')
+        gradcam_filename = generate_gradcam(model, img_array, filepath, 'conv4_block6_out')
 
         return render_template(
             'stkresults.html',
@@ -339,12 +340,10 @@ def predict_stroke():
             gradcam_image=gradcam_filename,
             report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S')
         )
-
     except Exception as e:
         print(f"❌ Stroke Prediction Error: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-# ==== Grad-CAM ====
 def generate_gradcam(model, img_array, img_path, layer_name='conv4_block6_out'):
     grad_model = tf.keras.models.Model(
         [model.inputs], [model.get_layer(layer_name).output, model.output]

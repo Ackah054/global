@@ -12,11 +12,11 @@ ENV TF_CPP_MIN_LOG_LEVEL=2
 # Set working directory inside the container
 WORKDIR /app
 
-# Install system dependencies needed for the app, including 'libglib2.0-0' to avoid some GUI errors,
-# and clean apt cache to reduce image size
+# Install system dependencies needed for the app
+# Replaced libgl1-mesa-glx with libgl1 (Debian Trixie no longer has libgl1-mesa-glx)
 RUN apt-get update && apt-get install -y \
     gcc \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     wget \
   && rm -rf /var/lib/apt/lists/*

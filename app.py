@@ -189,7 +189,7 @@ if __name__ == '__main__':
 
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # Suppress TensorFlow logs
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # Suppress TensorFlow logs
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from tensorflow.keras.models import load_model
@@ -204,27 +204,35 @@ import cv2
 
 app = Flask(__name__)
 
+# Create uploads folder if it doesn't exist
 UPLOAD_FOLDER = 'static/uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# Model paths (must match files in your Render build)
 TB_MODEL_PATH = "tb_detection_model.h5"
 STROKE_MODEL_PATH = "stroke_detection_resnet50.h5"
 
-# Lazy-loaded model variables
+# Lazy-loaded models
 tb_model = None
 stroke_model = None
 
 def get_tb_model():
+    """Load TB model only once."""
     global tb_model
     if tb_model is None:
+        if not os.path.exists(TB_MODEL_PATH):
+            raise FileNotFoundError(f"TB model not found: {TB_MODEL_PATH}")
         print("📥 Loading TB model...")
         tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
     return tb_model
 
 def get_stroke_model():
+    """Load Stroke model only once."""
     global stroke_model
     if stroke_model is None:
+        if not os.path.exists(STROKE_MODEL_PATH):
+            raise FileNotFoundError(f"Stroke model not found: {STROKE_MODEL_PATH}")
         print("📥 Loading Stroke model...")
         stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'preprocess_input': preprocess_input})
     return stroke_model
@@ -246,36 +254,26 @@ def predict_tb():
     try:
         model = get_tb_model()
 
-        # Form data
-        first_name = request.form.get('firstName')
-        last_name = request.form.get('lastName')
-        age = request.form.get('age')
-        gender = request.form.get('gender')
-        phone = request.form.get('phone')
-        email = request.form.get('email')
-        address = request.form.get('address')
-        city = request.form.get('city')
+        # Get form data
+        form_data = {k: request.form.get(k) for k in ['firstName', 'lastName', 'age', 'gender', 'phone', 'email', 'address', 'city']}
 
-        # Image
-        file = request.files['image']
-        if file.filename == '':
+        # Handle image
+        file = request.files.get('image')
+        if not file or file.filename == '':
             return jsonify({'error': 'No image selected'}), 400
 
         filename = f'tb_{datetime.now().strftime("%Y%m%d%H%M%S")}.jpg'
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        image_pil = Image.open(filepath).convert('RGB')
-        image_resized = image_pil.resize((224, 224))
-        img_array = image.img_to_array(image_resized)
-        img_array = preprocess_input(img_array)
-        img_array = np.expand_dims(img_array, axis=0)
+        # Preprocess image
+        img_array = preprocess_input(np.expand_dims(image.img_to_array(Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
 
         prediction = model.predict(img_array)[0][0]
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
 
-        gradcam_filename = generate_gradcam(model, img_array, filepath, 'conv4_block6_out')
+        gradcam_filename = generate_gradcam(model, img_array, filepath)
 
         return render_template(
             'tbresults.html',
@@ -284,16 +282,11 @@ def predict_tb():
             uploaded_image=filename,
             gradcam_image=gradcam_filename,
             report_id='TB-' + datetime.now().strftime('%Y%m%d%H%M%S'),
-            first_name=first_name,
-            last_name=last_name,
-            age=age,
-            gender=gender,
-            phone=phone,
-            city=city
+            **form_data
         )
     except Exception as e:
-        print(f"❌ TB Prediction Error: {str(e)}")
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        print(f"❌ TB Prediction Error: {e}")
+        return jsonify({'error': f'Server error: {e}'}), 500
 
 @app.route('/stroke')
 def stroke_form():
@@ -312,25 +305,21 @@ def predict_stroke():
     try:
         model = get_stroke_model()
 
-        file = request.files['image']
-        if file.filename == '':
+        file = request.files.get('image')
+        if not file or file.filename == '':
             return jsonify({'error': 'No image selected'}), 400
 
         filename = f'stk_{datetime.now().strftime("%Y%m%d%H%M%S")}.jpg'
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        image_pil = Image.open(filepath).convert('RGB')
-        image_resized = image_pil.resize((224, 224))
-        img_array = image.img_to_array(image_resized)
-        img_array = preprocess_input(img_array)
-        img_array = np.expand_dims(img_array, axis=0)
+        img_array = preprocess_input(np.expand_dims(image.img_to_array(Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
 
         prediction = model.predict(img_array)[0][0]
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
 
-        gradcam_filename = generate_gradcam(model, img_array, filepath, 'conv4_block6_out')
+        gradcam_filename = generate_gradcam(model, img_array, filepath)
 
         return render_template(
             'stkresults.html',
@@ -341,10 +330,11 @@ def predict_stroke():
             report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S')
         )
     except Exception as e:
-        print(f"❌ Stroke Prediction Error: {str(e)}")
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        print(f"❌ Stroke Prediction Error: {e}")
+        return jsonify({'error': f'Server error: {e}'}), 500
 
 def generate_gradcam(model, img_array, img_path, layer_name='conv4_block6_out'):
+    """Generate Grad-CAM heatmap."""
     grad_model = tf.keras.models.Model(
         [model.inputs], [model.get_layer(layer_name).output, model.output]
     )
@@ -375,3 +365,4 @@ def generate_gradcam(model, img_array, img_path, layer_name='conv4_block6_out'):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
+

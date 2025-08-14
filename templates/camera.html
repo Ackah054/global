@@ -617,7 +617,7 @@ function analyzeImage() {
 }
 
 function sendToBackend(formData) {
-  fetch('/predict', {
+  fetch('/predict_tb', {
     method: 'POST',
     body: formData
   })

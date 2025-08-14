@@ -684,7 +684,7 @@
           }
           formData.append('file', blob, 'brain_scan_captured.png');
           
-          fetch('/stroke/analyze', {
+          fetch('/predict_stroke', {
             method: 'POST',
             body: formData
           })

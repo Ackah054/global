@@ -24,16 +24,16 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Upgrade pip
-RUN pip install --upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
 
-# Force install CPU-only TensorFlow (no CUDA)
-RUN pip install --upgrade tensorflow-cpu
+# Install CPU-only TensorFlow (no CUDA) to save memory
+RUN pip install --no-cache-dir tensorflow-cpu
 
 # Install remaining dependencies from requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Upgrade gdown to latest version
-RUN pip install --upgrade gdown
+RUN pip install --no-cache-dir --upgrade gdown
 
 # Download TB detection model
 RUN gdown https://drive.google.com/uc?id=1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y -O tb_detection_model.h5
@@ -47,5 +47,5 @@ COPY . .
 # Expose port 10000
 EXPOSE 10000
 
-# Run app with Gunicorn
-CMD exec gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+# Run app directly with Flask to save memory
+CMD ["python", "app.py"]

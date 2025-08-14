@@ -24,12 +24,12 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 
 # Upgrade pip
-RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --upgrade pip
 
-# Install CPU-only TensorFlow (no CUDA) to save memory
+# Install CPU-only TensorFlow first
 RUN pip install --no-cache-dir tensorflow-cpu
 
-# Install remaining dependencies from requirements.txt
+# Install remaining dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Upgrade gdown to latest version
@@ -44,8 +44,8 @@ RUN gdown https://drive.google.com/uc?id=1QwjZKcXZK5dtf52I2wGDxUMzyMByhTn5 -O st
 # Copy rest of the app
 COPY . .
 
-# Expose port 10000
+# Expose port
 EXPOSE 10000
 
-# Run app directly with Flask to save memory
-CMD ["python", "app.py"]
+# Run app with ONE worker to save memory
+CMD exec gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 300

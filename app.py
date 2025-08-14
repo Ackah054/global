@@ -466,13 +466,14 @@ def predict_tb():
         file.save(filepath)
 
         # Preprocess image
-        img_array = preprocess_input(np.expand_dims(image.img_to_array(Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
+        img_array = preprocess_input(np.expand_dims(image.img_to_array(
+            Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
 
         prediction = model.predict(img_array, verbose=0)[0][0]
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
 
-        gradcam_filename = generate_gradcam(model, img_array, filepath)
+        gradcam_filename = generate_gradcam(model, img_array, filepath, layer_name='conv4_block6_out')
 
         return render_template(
             'tbresults.html',
@@ -512,13 +513,15 @@ def predict_stroke():
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        img_array = preprocess_input(np.expand_dims(image.img_to_array(Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
+        img_array = preprocess_input(np.expand_dims(image.img_to_array(
+            Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
 
         prediction = model.predict(img_array, verbose=0)[0][0]
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
 
-        gradcam_filename = generate_gradcam(model, img_array, filepath)
+        # Stroke uses out_relu for Grad-CAM
+        gradcam_filename = generate_gradcam(model, img_array, filepath, layer_name='out_relu')
 
         return render_template(
             'stkresults.html',
@@ -532,7 +535,7 @@ def predict_stroke():
         print(f"❌ Stroke Prediction Error: {e}")
         return jsonify({'error': f'Server error: {e}'}), 500
 
-def generate_gradcam(model, img_array, img_path, layer_name='conv4_block6_out'):
+def generate_gradcam(model, img_array, img_path, layer_name):
     """Generate Grad-CAM heatmap."""
     grad_model = tf.keras.models.Model(
         [model.inputs], [model.get_layer(layer_name).output, model.output]

@@ -529,6 +529,17 @@
                 display: none !important;
             }
         }
+
+
+
+        #tooltip {
+    animation: fadeIn 0.15s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-2px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
     </style>
 </head>
 <body>
@@ -598,9 +609,15 @@
                     
                     <div class="image-box">
                         <h3>AI Analysis Heatmap</h3>
-                        <div id="gradcamImageContainer">
-                            <!-- This will be populated by JavaScript -->
-                        </div>
+                        <!-- Interactive Grad-CAM Canvas -->
+<canvas id="heatmapCanvas" style="max-width: 100%; border-radius: 8px; border: 1px solid #dee2e6; cursor: crosshair;"></canvas>
+<div id="tooltip" style="display:none; position:absolute; background:white; padding:10px; border:1px solid #ccc; border-radius:6px; max-width:300px; box-shadow:0 2px 6px rgba(0,0,0,0.15); z-index:999;">
+    <div id="tt-text" style="font-size:0.9rem; color:#333;"></div>
+</div>
+
+                        <!--<div id="gradcamImageContainer">
+                            !-- This will be populated by JavaScript --
+                        </div>-->
                         
                         <div class="image-details">
                             <div class="image-detail-item">
@@ -973,12 +990,12 @@
             const originalContainer = await createImageElement(originalPaths, 'Original chest X-ray', 'original');
             document.getElementById('originalImageContainer').appendChild(originalContainer);
 
-            // Load gradcam image
-            const gradcamPaths = [];
-            if (imageVars.gradcam_image) gradcamPaths.push(...generateImagePaths(imageVars.gradcam_image));
+            ///// Load gradcam image
+            //const gradcamPaths = [];
+            //if (imageVars.gradcam_image) gradcamPaths.push(...generateImagePaths(imageVars.gradcam_image));
             
-            const gradcamContainer = await createImageElement(gradcamPaths, 'AI analysis heatmap', 'gradcam');
-            document.getElementById('gradcamImageContainer').appendChild(gradcamContainer);
+            //const gradcamContainer = await createImageElement(gradcamPaths, 'AI analysis heatmap', 'gradcam');
+            //document.getElementById('gradcamImageContainer').appendChild(gradcamContainer);
         }
 
         // Retry function
@@ -1201,6 +1218,53 @@
                 closeModal();
             }
         });
+
+
+
+        // === Interactive Grad-CAM Overlay ===
+const penis = {{ regions | tojson }}; // use 'regions' from Flask, rename var to 'penis'
+const heatmapCanvas = document.getElementById("heatmapCanvas");
+const ctx = heatmapCanvas.getContext("2d");
+const tooltip = document.getElementById("tooltip");
+const ttText = document.getElementById("tt-text");
+
+// Load Grad-CAM image
+const heatmapImg = new Image();
+heatmapImg.src = "/static/uploads/{{ gradcam_image }}";
+heatmapImg.onload = () => {
+    heatmapCanvas.width = heatmapImg.width;
+    heatmapCanvas.height = heatmapImg.height;
+    ctx.drawImage(heatmapImg, 0, 0);
+
+    // Draw bounding boxes
+    ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+    ctx.lineWidth = 2;
+    penis.forEach(r => {  // ✅ changed
+        ctx.strokeRect(r.x, r.y, r.width, r.height);
+    });
+};
+
+// Click event to show tooltip
+heatmapCanvas.addEventListener("click", (e) => {
+    const rect = heatmapCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    let found = false;
+    for (let r of penis) {  // ✅ changed
+        if (x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height) {
+            ttText.textContent = r.explanation;
+            tooltip.style.left = `${e.pageX + 12}px`;
+            tooltip.style.top = `${e.pageY + 12}px`;
+            tooltip.style.display = "block";
+            found = true;
+            break;
+        }
+    }
+    if (!found) tooltip.style.display = "none";
+});
+
+
     </script>
 </body>
 </html>

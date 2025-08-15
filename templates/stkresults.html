@@ -518,6 +518,13 @@
                 display: none !important;
             }
         }
+
+
+        #tooltip {
+    box-shadow: 0px 2px 6px rgba(0,0,0,0.15);
+    z-index: 2000;
+}
+
     </style>
 </head>
 <body>
@@ -537,8 +544,7 @@
                 <div class="image-container">
                     <div class="image-box">
                         <h3>Original Brain Scan</h3>
-                        <!--<img src="{{ url_for('static', filename=uploaded_image) }}" class="medical-image" onclick="openModal(this)" alt="Uploaded Brain Scan">
-                    -->
+                        
                     <img src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" class="medical-image" ...>
 
                     
@@ -564,8 +570,13 @@
                     
                     <div class="image-box">
                         <h3>AI Analysis Heatmap</h3>
-                        <img src="{{ url_for('static', filename='uploads/' + gradcam_image) }}" alt="Stroke Heatmap">
-                        <!--<img src="{{ url_for('static', filename='outputs/stroke_gradcam.jpg') }}" alt="Stroke Heatmap">-->
+                        <canvas id="heatmapCanvas" style="max-width:100%; border-radius:8px; cursor: crosshair;"></canvas>
+<div id="tooltip" style="display:none; position:absolute; background:white; border:1px solid #ccc; padding:6px; border-radius:4px; font-size:0.85rem; max-width:250px;">
+    <span id="tt-text"></span>
+</div>
+
+                        <!--<img src="{{ url_for('static', filename='uploads/' + gradcam_image) }}" alt="Stroke Heatmap">-->
+                        
                         <div class="image-details">
                             <div class="image-detail-item">
                                 <span class="image-detail-label">Processing Time:</span>
@@ -969,6 +980,50 @@
                 closeModal();
             }
         });
+
+
+
+        const strokeRegions = {{ stroke_regions | tojson }};
+const heatmapCanvas = document.getElementById("heatmapCanvas");
+const ctx = heatmapCanvas.getContext("2d");
+const tooltip = document.getElementById("tooltip");
+const ttText = document.getElementById("tt-text");
+
+// Load Grad-CAM image
+const heatmapImg = new Image();
+heatmapImg.src = "/static/uploads/{{ gradcam_image }}";
+heatmapImg.onload = () => {
+    heatmapCanvas.width = heatmapImg.width;
+    heatmapCanvas.height = heatmapImg.height;
+    ctx.drawImage(heatmapImg, 0, 0);
+
+    // Draw bounding boxes
+    ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+    ctx.lineWidth = 2;
+    strokeRegions.forEach(r => {
+        ctx.strokeRect(r.x, r.y, r.width, r.height);
+    });
+};
+
+// Show tooltip on click
+heatmapCanvas.addEventListener("click", (e) => {
+    const rect = heatmapCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    let found = false;
+    for (let r of strokeRegions) {
+        if (x >= r.x && x <= r.x + r.width && y >= r.y && y <= r.y + r.height) {
+            ttText.textContent = r.explanation;
+            tooltip.style.left = `${e.pageX + 12}px`;
+            tooltip.style.top = `${e.pageY + 12}px`;
+            tooltip.style.display = "block";
+            found = true;
+            break;
+        }
+    }
+    if (!found) tooltip.style.display = "none";
+});
     </script>
 </body>
 </html>

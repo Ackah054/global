@@ -340,7 +340,7 @@ def predict_stroke():
             confidence=round(confidence, 1),
             uploaded_image=filename,
             gradcam_image=gradcam_filename,
-            regions=regions,
+            stroke_regions=regions,
             report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S')
         )
     except Exception as e:

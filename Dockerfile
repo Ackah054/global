@@ -35,10 +35,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Upgrade gdown to latest version
 RUN pip install --no-cache-dir --upgrade gdown
 
-# Download TB detection model
-RUN gdown https://drive.google.com/uc?id=1XHtMgrMMuE9R6lF3eeSS1JBATJy3gO1y -O tb_detection_model.h5
+# Download TB detection model (lightweight version)
+RUN gdown https://drive.google.com/uc?id=1lX0J3GQHOYU7SNncEdiGSKytFPQl_0r1 -O tb_detection_model.h5
 
-# Download stroke detection model (lightweight)
+# Download stroke detection model (lightweight version)
 RUN gdown https://drive.google.com/uc?id=1X3u6ZwOBc6ZUw8CduHLcGhn6Jky486yV -O stroke_detection_resnet50.h5
 
 # Copy rest of the app

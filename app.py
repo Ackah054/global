@@ -385,7 +385,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.layers import InputLayer
-from tensorflow.keras.applications.resnet50 import preprocess_input
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import numpy as np
 from datetime import datetime
 from PIL import Image
@@ -433,7 +433,7 @@ def get_stroke_model():
         if not os.path.exists(STROKE_MODEL_PATH):
             raise FileNotFoundError(f"Stroke model not found: {STROKE_MODEL_PATH}")
         print("📥 Loading Stroke model...")
-        stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'preprocess_input': preprocess_input})
+        stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
     return stroke_model
 
 @app.route('/')
@@ -454,7 +454,8 @@ def predict_tb():
         model = get_tb_model()
 
         # Get form data
-        form_data = {k: request.form.get(k) for k in ['firstName', 'lastName', 'age', 'gender', 'phone', 'email', 'address', 'city']}
+        form_data = {k: request.form.get(k) for k in
+                     ['firstName', 'lastName', 'age', 'gender', 'phone', 'email', 'address', 'city']}
 
         # Handle image
         file = request.files.get('image')
@@ -473,7 +474,8 @@ def predict_tb():
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
 
-        gradcam_filename = generate_gradcam(model, img_array, filepath, layer_name='conv4_block6_out')
+        # Use out_relu for Grad-CAM
+        gradcam_filename = generate_gradcam(model, img_array, filepath, layer_name='out_relu')
 
         return render_template(
             'tbresults.html',
@@ -520,7 +522,7 @@ def predict_stroke():
         confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
         result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
 
-        # Stroke uses out_relu for Grad-CAM
+        # Stroke also uses out_relu for Grad-CAM now
         gradcam_filename = generate_gradcam(model, img_array, filepath, layer_name='out_relu')
 
         return render_template(
@@ -567,3 +569,4 @@ def generate_gradcam(model, img_array, img_path, layer_name):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)
+

@@ -1,202 +1,660 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Stroke Prediction</title>
-    </head>
-    <!--Google fonts-->
-        
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;900&family=Ubuntu:wght@300&display=swap" rel="stylesheet">
-    
-    <!--Style sheets-->
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="../static/predictstyles.css">
-     <!--<link rel="stylesheet" href="{{url_for('static', filename = 'predictstyles.css')}}" media="screen"> -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Stroke Risk Assessment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --danger-color: #dc2626;
+            --light-bg: #f8fafc;
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
 
-    <!-- Font awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://kit.fontawesome.com/65bc7f4f38.js" crossorigin="anonymous"></script>
-    
-    </head>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
 
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .assessment-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header-section h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-section p {
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        .form-section {
+            padding: 2rem;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .radio-option:hover {
+            border-color: var(--primary-color);
+            background-color: #f0f9ff;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .radio-option:has(input[type="radio"]:checked) {
+            border-color: var(--primary-color);
+            background-color: #f0f9ff;
+        }
+
+        .validation-message {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            min-height: 1.25rem;
+        }
+
+        .validation-message.error {
+            color: var(--danger-color);
+        }
+
+        .validation-message.success {
+            color: var(--success-color);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid #6b7280;
+            color: #6b7280;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .info-tooltip {
+            color: var(--primary-color);
+            cursor: help;
+            margin-left: 0.25rem;
+        }
+
+        .progress-indicator {
+            height: 4px;
+            background-color: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .radio-group {
+                flex-direction: column;
+            }
+            
+            .radio-option {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
 <body>
-    <section id="title">
-        <div class="container-fluid">
-          
-   <!-- Nav Bar -->
-          
-   <nav class="navbar navbar-expand-lg navbar-light ">
-    <a class="navbar-brand" href="{{url_for('home')}}"><img class="nav-bar-image" src = "../static/images/healthcare.png" alt = "healthcare-image" style="margin-right:10px"> Stroke prediction</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo02" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarTogglerDemo02">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link " href="index.html">Home</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link pred" href="bmi.html">BMIchecker</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="counsel.html">Counsel</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="cta.html">Contact</a>
-        </li>
-      </ul>
-    </div>
-</nav>     
+    <div class="container">
+        <div class="main-container">
+            <div class="assessment-card">
+                <div class="header-section">
+                    <i class="fas fa-heartbeat fa-2x mb-3"></i>
+                    <h1>Advanced Stroke Risk Assessment</h1>
+                    <p>Comprehensive evaluation based on established medical risk factors</p>
+                </div>
 
-    <!--SURVEY FORM-->
-<section>
-  <div class="container py-5 h-100">
-    <div class="row d-flex justify-content-center align-items-center h-100">
-      <div class="col">
-        <div class="card card-registration my-4" style="border-left-width:0px;border-right-width:0px;border-top-width:0px;border-bottom-width:0px;margin-top:0px;margin-bottom:0px;margin-left:0ri">
-          <div class="row 0">
-            <div class="col-xl-6 d-none d-xl-block">
-              <img src="../static/images/doc2new.png"
-                alt="Sample photo" class="img-fluid"
-                style="height:788px;vertical-align: bottom;" />
-                
+                <div class="form-section">
+                    <div class="progress-indicator">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+
+                    <form id="strokeAssessmentForm" action="{{ url_for('predictAction') }}" method="POST">
+                        <!-- Personal Information Section -->
+                        <div class="section-title">
+                            <i class="fas fa-user"></i>
+                            Personal Information
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Full Name</label>
+                                    <input type="text" class="form-control" name="name" id="patientName" 
+                                           placeholder="Enter your full name" required>
+                                    <div class="validation-message" id="nameValidation"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Age</label>
+                                    <input type="number" class="form-control" name="age" id="patientAge" 
+                                           placeholder="Enter your age" min="18" max="120" required>
+                                    <div class="validation-message" id="ageValidation"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Gender</label>
+                                    <div class="radio-group">
+                                        <div class="radio-option">
+                                            <input type="radio" name="gender" value="Male" id="genderMale" required>
+                                            <label for="genderMale">Male</label>
+                                        </div>
+                                        <div class="radio-option">
+                                            <input type="radio" name="gender" value="Female" id="genderFemale" required>
+                                            <label for="genderFemale">Female</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Marital Status</label>
+                                    <select class="form-select" name="maritalstatus" required>
+                                        <option value="" disabled selected>Select marital status</option>
+                                        <option value="married">Married</option>
+                                        <option value="single">Single</option>
+                                        <option value="divorced">Divorced</option>
+                                        <option value="widowed">Widowed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lifestyle Factors Section -->
+                        <div class="section-title">
+                            <i class="fas fa-running"></i>
+                            Lifestyle & Environmental Factors
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Work Type</label>
+                                    <select class="form-select" name="Worktype" required>
+                                        <option value="" disabled selected>Select work type</option>
+                                        <option value="privatejob">Private Sector</option>
+                                        <option value="govtemp">Government Employee</option>
+                                        <option value="selfemp">Self-Employed</option>
+                                        <option value="retired">Retired</option>
+                                        <option value="unemployed">Unemployed</option>
+                                        <option value="student">Student</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Residence Type</label>
+                                    <select class="form-select" name="Residence" required>
+                                        <option value="" disabled selected>Select residence type</option>
+                                        <option value="urban">Urban Area</option>
+                                        <option value="rural">Rural Area</option>
+                                        <option value="suburban">Suburban Area</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Smoking Status</label>
+                                    <select class="form-select" name="Smoke" required>
+                                        <option value="" disabled selected>Select smoking status</option>
+                                        <option value="non-smoker">Never Smoked</option>
+                                        <option value="formerly-smoked">Former Smoker (quit > 1 year ago)</option>
+                                        <option value="recent-quit">Recently Quit (< 1 year ago)</option>
+                                        <option value="smoker">Current Smoker</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Alcohol Consumption</label>
+                                    <select class="form-select" name="alcohol" required>
+                                        <option value="" disabled selected>Select alcohol consumption</option>
+                                        <option value="none">No Alcohol</option>
+                                        <option value="light">Light (1-7 drinks/week)</option>
+                                        <option value="moderate">Moderate (8-14 drinks/week)</option>
+                                        <option value="heavy">Heavy (>14 drinks/week)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Physical Activity Level</label>
+                            <select class="form-select" name="physical_activity" required>
+                                <option value="" disabled selected>Select your activity level</option>
+                                <option value="sedentary">Sedentary (little to no exercise)</option>
+                                <option value="light">Light Activity (1-2 days/week)</option>
+                                <option value="moderate">Moderate Activity (3-4 days/week)</option>
+                                <option value="active">Very Active (5+ days/week)</option>
+                            </select>
+                        </div>
+
+                        <!-- Medical History Section -->
+                        <div class="section-title">
+                            <i class="fas fa-stethoscope"></i>
+                            Medical History & Conditions
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">BMI (Body Mass Index)</label>
+                                    <input type="number" class="form-control" name="bmi" id="patientBMI" 
+                                           placeholder="Enter BMI (15-50)" min="15" max="50" step="0.1" required>
+                                    <div class="validation-message" id="bmiValidation"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Average Glucose Level (mg/dL)</label>
+                                    <input type="number" class="form-control" name="gluclevel" id="glucoseLevel" 
+                                           placeholder="Enter glucose level" min="50" max="400" required>
+                                    <div class="validation-message" id="glucoseValidation"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Hypertension (High Blood Pressure)</label>
+                                    <select class="form-select" name="Hypertension" required>
+                                        <option value="" disabled selected>Do you have hypertension?</option>
+                                        <option value="hypten">Yes, diagnosed with hypertension</option>
+                                        <option value="nohypten">No hypertension</option>
+                                        <option value="borderline">Borderline/Pre-hypertension</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Heart Disease</label>
+                                    <select class="form-select" name="Heartdisease" required>
+                                        <option value="" disabled selected>Do you have heart disease?</option>
+                                        <option value="heartdis">Yes, diagnosed heart condition</option>
+                                        <option value="noheartdis">No heart disease</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Diabetes Status</label>
+                                    <select class="form-select" name="diabetes" required>
+                                        <option value="" disabled selected>Select diabetes status</option>
+                                        <option value="none">No Diabetes</option>
+                                        <option value="prediabetes">Pre-diabetes</option>
+                                        <option value="type1">Type 1 Diabetes</option>
+                                        <option value="type2">Type 2 Diabetes</option>
+                                        <option value="gestational">Gestational Diabetes (past)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Cholesterol Level</label>
+                                    <select class="form-select" name="cholesterol" required>
+                                        <option value="" disabled selected>Select cholesterol status</option>
+                                        <option value="normal">Normal (< 200 mg/dL)</option>
+                                        <option value="borderline">Borderline High (200-239 mg/dL)</option>
+                                        <option value="high">High (≥ 240 mg/dL)</option>
+                                        <option value="unknown">Unknown/Not Tested</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Family History Section -->
+                        <div class="section-title">
+                            <i class="fas fa-users"></i>
+                            Family History
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Family History of Stroke</label>
+                                    <select class="form-select" name="family_stroke" required>
+                                        <option value="" disabled selected>Family history of stroke?</option>
+                                        <option value="none">No family history</option>
+                                        <option value="parent">Parent had stroke</option>
+                                        <option value="sibling">Sibling had stroke</option>
+                                        <option value="multiple">Multiple family members</option>
+                                        <option value="unknown">Unknown</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Family History of Heart Disease</label>
+                                    <select class="form-select" name="family_heart" required>
+                                        <option value="" disabled selected>Family history of heart disease?</option>
+                                        <option value="none">No family history</option>
+                                        <option value="parent">Parent had heart disease</option>
+                                        <option value="sibling">Sibling had heart disease</option>
+                                        <option value="multiple">Multiple family members</option>
+                                        <option value="unknown">Unknown</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Risk Factors -->
+                        <div class="section-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Additional Risk Factors
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Sleep Quality</label>
+                                    <select class="form-select" name="sleep_quality" required>
+                                        <option value="" disabled selected>How is your sleep quality?</option>
+                                        <option value="excellent">Excellent (7-9 hours, restful)</option>
+                                        <option value="good">Good (6-8 hours, mostly restful)</option>
+                                        <option value="fair">Fair (5-7 hours, sometimes restless)</option>
+                                        <option value="poor">Poor (< 5 hours or very restless)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Stress Level</label>
+                                    <select class="form-select" name="stress_level" required>
+                                        <option value="" disabled selected>What is your stress level?</option>
+                                        <option value="low">Low Stress</option>
+                                        <option value="moderate">Moderate Stress</option>
+                                        <option value="high">High Stress</option>
+                                        <option value="severe">Severe/Chronic Stress</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Previous Stroke or TIA (Mini-Stroke)</label>
+                            <select class="form-select" name="previous_stroke" required>
+                                <option value="" disabled selected>Have you had a previous stroke or TIA?</option>
+                                <option value="none">No previous stroke or TIA</option>
+                                <option value="tia">Previous TIA (mini-stroke)</option>
+                                <option value="minor_stroke">Previous minor stroke</option>
+                                <option value="major_stroke">Previous major stroke</option>
+                            </select>
+                        </div>
+
+                        <!-- Submit Section -->
+                        <div class="d-flex justify-content-between align-items-center pt-4">
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="fas fa-redo me-2"></i>Reset Form
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-chart-line me-2"></i>Assess Stroke Risk
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="col-xl-6">
-              <div class="card-body p-md-5 text-black">
-                <h3 class="mb-5 text-uppercase">STROKE PREDICTION FORM</h3>
-                <form action="{{ url_for('predictAction') }}" method="POST">
-                <div class="row">
-                  <div class="col-md-6 mb-4">
-                    <div class="form-outline good-one">
-                      <input type="text" id="pons-name" onkeyup="validateName()" placeholder="Name" name="name" id="form3Example1m" class="name form-control form-control-lg" required/>
-                    </div>
-                    <div class="good-two">
-                      <span id="name-vignesh"></span>
-                    </div> 
-                      
-                  </div>
-                  <div class="col-md-6 mb-4 name-age-div">
-                    <div class="form-outline good-one">
-                      <input type="text" id="pons-age" onkeyup="validateAge()" placeholder="Age" name="age" id="form3Example1n" class="form-control form-control-lg" required/>
-                    </div>
-                    <div class="good-two">
-                      <span id="age-vignesh"></span>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-md-6 mb-4">
-                      <select name="maritalstatus" id="pons" required>
-                        <option value="" disabled selected hidden>Marital Status</option>
-                          <option value="married">Yes, Im married</option>
-                          <option value="not married">No, Im single</option>
-                        </select>
-                  </div>
-                  <div class="col-md-6 mb-4">
-                    <select name="Worktype" id="pons" required>
-                      <option value="" disabled selected hidden>Work type</option>
-                      <option value="privatejob">I do have a private job</option>
-                      <option value="govtemp">Im a Government employee</option>
-                      <option value="selfemp">Im self-employeed</option>
-                    </select>
-                  </div>
-                </div>
-        
-                <div class="form-outlinen mb-4">
-                  <select name="Residence" required>
-                    <option value="" disabled selected hidden>Residence type</option>
-                    <option value="urban">I live in an urban city</option>
-                    <option value="rural">I reside in a rural setting</option>
-                  </select>
-                </div>
-
-                <div class="d-md-flex justify-content-start align-items-center mb-4 py-2">
-
-                  <h6 class="mb-0 me-4">Gender: </h6>
-
-                  <div class="form-check form-check-inline mb-0 me-4">
-                    <input class="form-check-input" type="radio" name="gender" id="femaleGender" value="Female" required/>
-                    <label class="form-check-label" for="femaleGender">Female</label>
-                  </div>
-
-                  <div class="form-check form-check-inline mb-0 me-4">
-                    <input class="form-check-input" type="radio" name="gender" id="maleGender" value="Male" required/>
-                    <label class="form-check-label" for="maleGender">Male</label>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-6 mb-4">
-                    <div class="form-outline good-one">
-                      <input type="text" id="pons-bmi" onkeyup="validateBmi()" placeholder="BMI (Range:15-45)" name="bmi" id="form3Example1x" class="form-control form-control-lg" required/>
-                    </div>
-                    <div class="good-two">
-                      <span id="bmi-vignesh"></span>
-                    </div>
-                  </div>
-
-                  <div class="col-md-6 mb-4">
-                    <div class="form-outline good-one">
-                      <input type="text" id="pons-glu" onkeyup="validateGlu()" placeholder="Glucose level " name="gluclevel" id="form3Example1z" class="form-control form-control-lg" required/>
-                    </div>
-                    <div class="good-two">
-                      <span id="glu-vignesh"></span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-outlinen mb-4">
-                  <select name="Smoke" required>
-                    <option value="" disabled selected hidden>Do you smoke?</option>
-                    <option value="formerly-smoked">I used to smoke once upon</option>
-                    <option value="smoker">Yes, I do smoke frequently</option>
-                    <option value="non-smoker">No, I had never smoked before</option>
-                  </select>
-                </div>               
-
-                <div class="form-outlinen mb-4">
-                  <select name="Hypertension" required>
-                    <option value="" disabled selected hidden>Have you been diagnosed with hypertension?</option>
-                    <option value="hypten">Yes, I do have hypertension</option>
-                    <option value="nohypten">No, I dont possess</option>
-                  </select>
-                </div>
-          
-
-                <div class="form-outlinen mb-4">
-                  <select name="Heartdisease" required>
-                    <option value="" disabled selected hidden>Do you have any other heart diseases?</option>
-                    <option value="heartdis">Yes, I have some heart-related problems</option>
-                    <option value="noheartdis">No, I dont have any</option>
-                  </select>
-                </div>
-                
-                <div class="d-flex justify-content-end pt-3">
-  <input type="reset" class="btn" value="Reset" style="margin-right: 25px;">
-  <button class="btn" type="submit">Scan</button>
-</div>
-
-                
-                
-                </div>
-                </form>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
-</section>
 
-    
-<h3>GODFRED ACKAH @ UMAT</h3>
-<br><br>
-<script type="text/javascript" src="../static/predict.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Enhanced validation functions (maintaining core functionality)
+        function validateName() {
+            const name = document.getElementById('patientName').value;
+            const validation = document.getElementById('nameValidation');
+            
+            if (name.length < 2) {
+                validation.textContent = 'Name must be at least 2 characters long';
+                validation.className = 'validation-message error';
+                return false;
+            } else if (!/^[a-zA-Z\s]+$/.test(name)) {
+                validation.textContent = 'Name should only contain letters and spaces';
+                validation.className = 'validation-message error';
+                return false;
+            } else {
+                validation.textContent = '✓ Valid name';
+                validation.className = 'validation-message success';
+                return true;
+            }
+        }
+
+        function validateAge() {
+            const age = parseInt(document.getElementById('patientAge').value);
+            const validation = document.getElementById('ageValidation');
+            
+            if (isNaN(age) || age < 18 || age > 120) {
+                validation.textContent = 'Please enter a valid age between 18 and 120';
+                validation.className = 'validation-message error';
+                return false;
+            } else {
+                validation.textContent = '✓ Valid age';
+                validation.className = 'validation-message success';
+                return true;
+            }
+        }
+
+        function validateBmi() {
+            const bmi = parseFloat(document.getElementById('patientBMI').value);
+            const validation = document.getElementById('bmiValidation');
+            
+            if (isNaN(bmi) || bmi < 15 || bmi > 50) {
+                validation.textContent = 'Please enter a valid BMI between 15 and 50';
+                validation.className = 'validation-message error';
+                return false;
+            } else {
+                let category = '';
+                if (bmi < 18.5) category = '(Underweight)';
+                else if (bmi < 25) category = '(Normal weight)';
+                else if (bmi < 30) category = '(Overweight)';
+                else category = '(Obese)';
+                
+                validation.textContent = `✓ Valid BMI ${category}`;
+                validation.className = 'validation-message success';
+                return true;
+            }
+        }
+
+        function validateGlucose() {
+            const glucose = parseInt(document.getElementById('glucoseLevel').value);
+            const validation = document.getElementById('glucoseValidation');
+            
+            if (isNaN(glucose) || glucose < 50 || glucose > 400) {
+                validation.textContent = 'Please enter a valid glucose level between 50-400 mg/dL';
+                validation.className = 'validation-message error';
+                return false;
+            } else {
+                let status = '';
+                if (glucose < 100) status = '(Normal)';
+                else if (glucose < 126) status = '(Pre-diabetic range)';
+                else status = '(Diabetic range)';
+                
+                validation.textContent = `✓ Valid glucose level ${status}`;
+                validation.className = 'validation-message success';
+                return true;
+            }
+        }
+
+        // Progress bar functionality
+        function updateProgress() {
+            const form = document.getElementById('strokeAssessmentForm');
+            const inputs = form.querySelectorAll('input[required], select[required]');
+            let completed = 0;
+            
+            inputs.forEach(input => {
+                if (input.type === 'radio') {
+                    if (form.querySelector(`input[name="${input.name}"]:checked`)) {
+                        completed++;
+                    }
+                } else if (input.value.trim() !== '') {
+                    completed++;
+                }
+            });
+            
+            const progress = (completed / inputs.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        // Event listeners for real-time validation and progress
+        document.getElementById('patientName').addEventListener('keyup', () => {
+            validateName();
+            updateProgress();
+        });
+
+        document.getElementById('patientAge').addEventListener('keyup', () => {
+            validateAge();
+            updateProgress();
+        });
+
+        document.getElementById('patientBMI').addEventListener('keyup', () => {
+            validateBmi();
+            updateProgress();
+        });
+
+        document.getElementById('glucoseLevel').addEventListener('keyup', () => {
+            validateGlucose();
+            updateProgress();
+        });
+
+        // Add progress tracking for all form elements
+        document.querySelectorAll('select, input[type="radio"]').forEach(element => {
+            element.addEventListener('change', updateProgress);
+        });
+
+        // Form submission validation
+        document.getElementById('strokeAssessmentForm').addEventListener('submit', function(e) {
+            const isValid = validateName() && validateAge() && validateBmi() && validateGlucose();
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please correct the errors in the form before submitting.');
+            }
+        });
+
+        // Initialize progress on page load
+        document.addEventListener('DOMContentLoaded', updateProgress);
+    </script>
 </body>
-</html>     
+</html>

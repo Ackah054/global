@@ -434,13 +434,21 @@
   <img id="uploadPreview" alt="Uploaded Image Preview" />
   <div class="status-message" id="uploadStatus"></div>
 
+
+  <div class="controls">
+  <button type="submit" class="btn btn-results" id="resultsBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
+    🔬 ANALYZE FOR TB
+  </button>
+</div>
+
+<!----
   <div class="controls">
     <button type="submit" class="btn btn-results" id="resultsBtn">
       🔬 ANALYZE FOR TB
     </button>
   </div>
 </form>
-
+-->
 
 <!-- Upload Section --
 <form id="tbForm" action="{{ url_for('predict_tb') }}" method="POST" enctype="multipart/form-data">
@@ -731,7 +739,34 @@ document.getElementById('imageUploadForm').addEventListener('submit', function (
   });
 });
 
+//////////////////////////////////////
+const resultsBtn = document.getElementById("resultsBtn");
+  const fileInput = document.getElementById("imageUpload"); // change if your file input has a different ID
+  const cameraInput = document.getElementById("cameraInput"); // optional, if you have a camera capture input
 
+  function enableAnalyzeButton() {
+    resultsBtn.disabled = false;
+    resultsBtn.style.opacity = "1";
+    resultsBtn.style.cursor = "pointer";
+  }
+
+  // Enable when file is uploaded
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        enableAnalyzeButton();
+      }
+    });
+  }
+
+  // Enable when camera image is captured
+  if (cameraInput) {
+    cameraInput.addEventListener("change", () => {
+      if (cameraInput.files.length > 0) {
+        enableAnalyzeButton();
+      }
+    });
+  }
 </script>
 
 </body>

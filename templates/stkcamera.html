@@ -539,12 +539,22 @@
   <img id="uploadPreview" alt="Uploaded Brain Scan Preview" />
   <div class="status-message" id="uploadStatus"></div>
 
+
   <!-- Results Button -->
+<div class="controls">
+  <button type="submit" class="btn btn-stroke" id="resultsBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
+    🔬 ANALYZE FOR STROKE
+  </button>
+</div>
+
+
+  <!-- Results Button --
   <div class="controls">
     <button type="submit" class="btn btn-stroke" id="resultsBtn">
       🔬 ANALYZE FOR STROKE
     </button>
   </div>
+-->
 </form>
   </div>
   <div class="loading" id="loadingScreen">
@@ -716,6 +726,35 @@
         stream.getTracks().forEach(track => track.stop());
       }
     });
+
+    /////////////////////////////////////
+    const resultsBtn = document.getElementById("resultsBtn");
+  const fileInput = document.getElementById("imageUpload"); // change ID if your file input has a different one
+  const cameraInput = document.getElementById("cameraInput"); // optional, if you have camera capture
+
+  function enableAnalyzeButton() {
+    resultsBtn.disabled = false;
+    resultsBtn.style.opacity = "1";
+    resultsBtn.style.cursor = "pointer";
+  }
+
+  // Enable when file is uploaded
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        enableAnalyzeButton();
+      }
+    });
+  }
+
+  // Enable when camera image is captured
+  if (cameraInput) {
+    cameraInput.addEventListener("change", () => {
+      if (cameraInput.files.length > 0) {
+        enableAnalyzeButton();
+      }
+    });
+  }
   </script>
 </body>
 </html>

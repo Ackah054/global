@@ -217,6 +217,43 @@ def generate_gradcam(model, img_array, img_path, layer_name, threshold=0.6):
 
     return gradcam_filename, regions
 
+
+
+from flask import Flask, render_template, request, jsonify
+
+@app.route("/chatbot", methods=["POST"])
+def chatbot():
+    data = request.get_json()
+    mode = data.get("mode")
+    answers = data.get("answers", [])
+
+    score = 0
+    for ans in answers:
+        if ans in ["yes", "y"]:  
+            score += 1
+
+    if mode == "stroke":
+        if score >= 2:
+            result = "⚠️ You may be at HIGH RISK of Stroke. Please take a scan to confirm."
+        else:
+            result = "✅ Your Stroke risk seems low, but consult a doctor if symptoms persist."
+    elif mode == "tb":
+        if score >= 2:
+            result = "⚠️ You may be at HIGH RISK of TB. Please take a scan to confirm."
+        else:
+            result = "✅ Your TB risk seems low, but consult a doctor if symptoms persist."
+    else:
+        result = "❌ Invalid selection."
+
+    return jsonify({"result": result})
+
+
+
+
+
+
+
+
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port, debug=False)

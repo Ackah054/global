@@ -1,0 +1,118 @@
+<div id="chat-widget" class="chat-widget">
+  <div id="chat-header">🩺 Health Chatbot</div>
+  <div id="chat-body"></div>
+  <input id="chat-input" type="text" placeholder="Type your answer..." />
+</div>
+
+<style>
+.chat-widget {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 300px;
+  height: 400px;
+  background: white;
+  border: 2px solid #007bff;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  font-family: Arial, sans-serif;
+}
+#chat-header {
+  background: #007bff;
+  color: white;
+  padding: 8px;
+  font-weight: bold;
+  border-radius: 10px 10px 0 0;
+}
+#chat-body {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  font-size: 14px;
+}
+#chat-input {
+  border: none;
+  border-top: 1px solid #ccc;
+  padding: 8px;
+  font-size: 14px;
+}
+</style>
+
+<script>
+let messages = [];
+let questionIndex = 0;
+let mode = "";
+
+const questions = {
+  stroke: [
+    "Do you have high blood pressure? (yes/no)",
+    "Do you smoke? (yes/no)",
+    "Do you have diabetes? (yes/no)",
+    "Do you exercise less than 3 times a week? (yes/no)"
+  ],
+  tb: [
+    "Have you been coughing for more than 2 weeks? (yes/no)",
+    "Do you have night sweats? (yes/no)",
+    "Have you lost weight recently? (yes/no)",
+    "Have you been in contact with a TB patient? (yes/no)"
+  ]
+};
+
+function addMessage(text, sender="bot") {
+  const body = document.getElementById("chat-body");
+  const msg = document.createElement("div");
+  msg.textContent = (sender==="bot" ? "🤖 " : "🧑 ") + text;
+  body.appendChild(msg);
+  body.scrollTop = body.scrollHeight;
+}
+
+document.getElementById("chat-input").addEventListener("keydown", function(e){
+  if (e.key === "Enter") {
+    let input = this.value.trim().toLowerCase();
+    if (!input) return;
+    addMessage(input, "user");
+    this.value = "";
+
+    if (!mode) {
+      if (input.includes("stroke")) {
+        mode = "stroke";
+        questionIndex = 0;
+        addMessage("Okay, let's assess Stroke risk.");
+        addMessage(questions.stroke[questionIndex]);
+      } else if (input.includes("tb")) {
+        mode = "tb";
+        questionIndex = 0;
+        addMessage("Okay, let's assess TB risk.");
+        addMessage(questions.tb[questionIndex]);
+      } else {
+        addMessage("Please type 'stroke' or 'tb' to begin.");
+      }
+      return;
+    }
+
+    // Store answers
+    messages.push(input);
+
+    // Ask next question or evaluate
+    questionIndex++;
+    if (questionIndex < questions[mode].length) {
+      addMessage(questions[mode][questionIndex]);
+    } else {
+      fetch("/chatbot", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ mode: mode, answers: messages })
+      })
+      .then(res => res.json())
+      .then(data => {
+        addMessage(data.result);
+        // reset
+        messages = [];
+        mode = "";
+        questionIndex = 0;
+      });
+    }
+  }
+});
+</script>

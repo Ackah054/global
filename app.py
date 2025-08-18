@@ -233,6 +233,9 @@ STROKE_MODEL_PATH = "stroke_detection_resnet50.h5"
 tb_model = None
 stroke_model = None
 
+# === Confidence threshold for rejecting invalid images ===
+CONFIDENCE_THRESHOLD = 0.6
+
 def get_tb_model():
     global tb_model
     if tb_model is None:
@@ -281,15 +284,28 @@ def predict_tb():
             Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
 
         prediction = model.predict(img_array, verbose=0)[0][0]
-        confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
-        result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
+        confidence = float(prediction if prediction > 0.5 else (1 - prediction))
 
+        # 🔹 Reject invalid images
+        if confidence < CONFIDENCE_THRESHOLD:
+            return render_template(
+                'tbresults.html',
+                label="Invalid Image: Please upload a proper Chest X-ray/CT scan.",
+                confidence=round(confidence * 100, 1),
+                uploaded_image=filename,
+                gradcam_image=None,
+                regions=[],
+                report_id='TB-' + datetime.now().strftime('%Y%m%d%H%M%S'),
+                **form_data
+            )
+
+        result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
         gradcam_filename, regions = generate_gradcam(model, img_array, filepath, layer_name='out_relu')
 
         return render_template(
             'tbresults.html',
             label=result,
-            confidence=round(confidence, 1),
+            confidence=round(confidence * 100, 1),
             uploaded_image=filename,
             gradcam_image=gradcam_filename,
             regions=regions,
@@ -329,15 +345,27 @@ def predict_stroke():
             Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
 
         prediction = model.predict(img_array, verbose=0)[0][0]
-        confidence = float(prediction * 100) if prediction > 0.5 else float((1 - prediction) * 100)
-        result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
+        confidence = float(prediction if prediction > 0.5 else (1 - prediction))
 
+        # 🔹 Reject invalid images
+        if confidence < CONFIDENCE_THRESHOLD:
+            return render_template(
+                'stkresults.html',
+                label="Invalid Image: Please upload a proper Brain CT scan.",
+                confidence=round(confidence * 100, 1),
+                uploaded_image=filename,
+                gradcam_image=None,
+                stroke_regions=[],
+                report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S')
+            )
+
+        result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
         gradcam_filename, regions = generate_gradcam(model, img_array, filepath, layer_name='out_relu')
 
         return render_template(
             'stkresults.html',
             label=result,
-            confidence=round(confidence, 1),
+            confidence=round(confidence * 100, 1),
             uploaded_image=filename,
             gradcam_image=gradcam_filename,
             stroke_regions=regions,

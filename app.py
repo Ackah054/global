@@ -223,7 +223,6 @@ def generate_gradcam(model, img_array, img_path, layer_name, threshold=0.6):
 
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
 
 @app.route("/chatbot", methods=["POST"])
 def chatbot():

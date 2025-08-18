@@ -1,185 +1,222 @@
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Disable GPU
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"   # Suppress TensorFlow logs
 
-import cv2
-import numpy as np
-from flask import Flask, render_template, request, redirect, url_for
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing import image
+from tensorflow.keras.layers import InputLayer
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+import numpy as np
 from datetime import datetime
-import uuid
+from PIL import Image
+import tensorflow as tf
+import cv2
 
-# =========================
-# Flask App Setup
-# =========================
+# ===== Prevent TensorFlow from using all memory =====
+physical_devices = tf.config.list_physical_devices('CPU')
+try:
+    for dev in physical_devices:
+        tf.config.experimental.set_memory_growth(dev, True)
+except Exception as e:
+    print(f"⚠ Memory growth setup failed: {e}")
+# ====================================================
+
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+UPLOAD_FOLDER = 'static/uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Load Models
-tb_model = load_model("tb_detection_model.h5")
-stroke_model = load_model("stroke_detection_model.h5")
+# Model paths
+TB_MODEL_PATH = "tb_detection_model.h5"
+STROKE_MODEL_PATH = "stroke_detection_resnet50.h5"
 
-IMG_SIZE = (224, 224)  # Assuming both models use this input size
-CONF_THRESHOLD = 0.7   # Confidence threshold
+tb_model = None
+stroke_model = None
 
-# =========================
-# Helper: Validate if uploaded image looks like medical scan
-# =========================
-def validate_medical_image(filepath):
-    """Basic heuristic check: reject colorful or unrealistic images for scans"""
-    try:
-        # Load grayscale
-        gray_img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
-        if gray_img is None:
-            return False
+# === Confidence threshold for rejecting invalid images ===
+CONFIDENCE_THRESHOLD = 0.6
 
-        # Load color
-        color_img = cv2.imread(filepath)
+def get_tb_model():
+    global tb_model
+    if tb_model is None:
+        if not os.path.exists(TB_MODEL_PATH):
+            raise FileNotFoundError(f"TB model not found: {TB_MODEL_PATH}")
+        tb_model = load_model(TB_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
+    return tb_model
 
-        # Check if too colorful (X-rays/CT are mostly grayscale)
-        if np.std(color_img.reshape(-1, 3), axis=0).mean() > 45:  # threshold can be tuned
-            return False
+def get_stroke_model():
+    global stroke_model
+    if stroke_model is None:
+        if not os.path.exists(STROKE_MODEL_PATH):
+            raise FileNotFoundError(f"Stroke model not found: {STROKE_MODEL_PATH}")
+        stroke_model = load_model(STROKE_MODEL_PATH, compile=False, custom_objects={'InputLayer': InputLayer})
+    return stroke_model
 
-        # Brightness check (medical scans are not too dark/bright)
-        mean_intensity = np.mean(gray_img)
-        if mean_intensity < 30 or mean_intensity > 220:
-            return False
-
-        return True
-    except:
-        return False
-
-# =========================
-# Routes
-# =========================
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+    return render_template('choice.html')
 
-# ---------- TB FORM ----------
-@app.route('/tbforms', methods=['GET', 'POST'])
-def tbforms():
-    if request.method == 'POST':
-        form_data = request.form.to_dict()
-        request.environ['tb_form_data'] = form_data
-        return redirect(url_for('tb_camera'))
+@app.route('/tb')
+def tb_form():
     return render_template('tbforms.html')
 
-@app.route('/tb_camera')
-def tb_camera():
-    return render_template('camera.html', analysis_type="tb")
+@app.route('/camera')
+def show_tb_camera():
+    return render_template('camera.html')
 
-# ---------- Stroke FORM ----------
-@app.route('/stkforms', methods=['GET', 'POST'])
-def stkforms():
-    if request.method == 'POST':
-        form_data = request.form.to_dict()
-        request.environ['stk_form_data'] = form_data
-        return redirect(url_for('stk_camera'))
-    return render_template('stkforms.html')
+@app.route('/predict_tb', methods=['POST'])
+def predict_tb():
+    try:
+        model = get_tb_model()
 
-@app.route('/stk_camera')
-def stk_camera():
-    return render_template('camera.html', analysis_type="stroke")
+        form_data = {k: request.form.get(k) for k in
+                     ['firstName', 'lastName', 'age', 'gender', 'phone', 'email', 'address', 'city']}
 
-# ---------- TB ANALYSIS ----------
-@app.route('/analyze_tb', methods=['POST'])
-def analyze_tb():
-    file = request.files['image']
-    filename = str(uuid.uuid4()) + "_" + file.filename
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
+        file = request.files.get('image')
+        if not file or file.filename == '':
+            return jsonify({'error': 'No image selected'}), 400
 
-    form_data = getattr(request.environ, 'tb_form_data', {})
+        filename = f'tb_{datetime.now().strftime("%Y%m%d%H%M%S")}.jpg'
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
 
-    # Validate image before running model
-    if not validate_medical_image(filepath):
+        img_array = preprocess_input(np.expand_dims(image.img_to_array(
+            Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
+
+        prediction = model.predict(img_array, verbose=0)[0][0]
+        confidence = float(prediction if prediction > 0.5 else (1 - prediction))
+
+        # 🔹 Reject invalid images
+        if confidence < CONFIDENCE_THRESHOLD:
+            return render_template(
+                'tbresults.html',
+                label="Invalid Image: Please upload a proper Chest X-ray/CT scan.",
+                confidence=round(confidence * 100, 1),
+                uploaded_image=filename,
+                gradcam_image=None,
+                regions=[],
+                report_id='TB-' + datetime.now().strftime('%Y%m%d%H%M%S'),
+                **form_data
+            )
+
+        result = "TB Detected - High Confidence" if prediction > 0.5 else "No TB Detected - Low Risk"
+        gradcam_filename, regions = generate_gradcam(model, img_array, filepath, layer_name='out_relu')
+
         return render_template(
             'tbresults.html',
-            label="Error: Uploaded image does not appear to be a valid Chest X-ray.",
-            confidence=None,
+            label=result,
+            confidence=round(confidence * 100, 1),
             uploaded_image=filename,
-            gradcam_image=None,
-            regions=[],
+            gradcam_image=gradcam_filename,
+            regions=regions,
             report_id='TB-' + datetime.now().strftime('%Y%m%d%H%M%S'),
             **form_data
         )
+    except Exception as e:
+        print(f"❌ TB Prediction Error: {e}")
+        return jsonify({'error': f'Server error: {e}'}), 500
 
-    # Preprocess image
-    img = image.load_img(filepath, target_size=IMG_SIZE)
-    img_array = image.img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+@app.route('/stroke')
+def stroke_form():
+    return render_template('stkforms.html')
 
-    preds = tb_model.predict(img_array)
-    confidence = float(np.max(preds))
+@app.route('/predictAction', methods=['POST'])
+def predictAction():
+    return redirect(url_for('show_stroke_camera'))
 
-    if confidence < CONF_THRESHOLD:
-        label = "Error: Low confidence. Image may not be valid for TB analysis."
-    else:
-        label = "TB Detected" if np.argmax(preds) == 1 else "Normal"
+@app.route('/stkcamera')
+def show_stroke_camera():
+    return render_template('stkcamera.html')
 
-    return render_template(
-        'tbresults.html',
-        label=label,
-        confidence=round(confidence * 100, 2),
-        uploaded_image=filename,
-        gradcam_image=None,
-        regions=[],
-        report_id='TB-' + datetime.now().strftime('%Y%m%d%H%M%S'),
-        **form_data
-    )
+@app.route('/predict_stroke', methods=['POST'])
+def predict_stroke():
+    try:
+        model = get_stroke_model()
 
-# ---------- STROKE ANALYSIS ----------
-@app.route('/analyze_stroke', methods=['POST'])
-def analyze_stroke():
-    file = request.files['image']
-    filename = str(uuid.uuid4()) + "_" + file.filename
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(filepath)
+        file = request.files.get('image')
+        if not file or file.filename == '':
+            return jsonify({'error': 'No image selected'}), 400
 
-    form_data = getattr(request.environ, 'stk_form_data', {})
+        filename = f'stk_{datetime.now().strftime("%Y%m%d%H%M%S")}.jpg'
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
 
-    # Validate image before running model
-    if not validate_medical_image(filepath):
+        img_array = preprocess_input(np.expand_dims(image.img_to_array(
+            Image.open(filepath).convert('RGB').resize((224, 224))), axis=0))
+
+        prediction = model.predict(img_array, verbose=0)[0][0]
+        confidence = float(prediction if prediction > 0.5 else (1 - prediction))
+
+        # 🔹 Reject invalid images
+        if confidence < CONFIDENCE_THRESHOLD:
+            return render_template(
+                'stkresults.html',
+                label="Invalid Image: Please upload a proper Brain CT scan.",
+                confidence=round(confidence * 100, 1),
+                uploaded_image=filename,
+                gradcam_image=None,
+                stroke_regions=[],
+                report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S')
+            )
+
+        result = "Stroke Detected - High Confidence" if prediction > 0.5 else "No Stroke Detected - Low Risk"
+        gradcam_filename, regions = generate_gradcam(model, img_array, filepath, layer_name='out_relu')
+
         return render_template(
             'stkresults.html',
-            label="Error: Uploaded image does not appear to be a valid Brain CT scan.",
-            confidence=None,
+            label=result,
+            confidence=round(confidence * 100, 1),
             uploaded_image=filename,
-            gradcam_image=None,
-            regions=[],
-            report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S'),
-            **form_data
+            gradcam_image=gradcam_filename,
+            stroke_regions=regions,
+            report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S')
         )
+    except Exception as e:
+        print(f"❌ Stroke Prediction Error: {e}")
+        return jsonify({'error': f'Server error: {e}'}), 500
 
-    # Preprocess image
-    img = image.load_img(filepath, target_size=IMG_SIZE)
-    img_array = image.img_to_array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
-
-    preds = stroke_model.predict(img_array)
-    confidence = float(np.max(preds))
-
-    if confidence < CONF_THRESHOLD:
-        label = "Error: Low confidence. Image may not be valid for Stroke analysis."
-    else:
-        label = "Stroke Detected" if np.argmax(preds) == 1 else "Normal"
-
-    return render_template(
-        'stkresults.html',
-        label=label,
-        confidence=round(confidence * 100, 2),
-        uploaded_image=filename,
-        gradcam_image=None,
-        regions=[],
-        report_id='STK-' + datetime.now().strftime('%Y%m%d%H%M%S'),
-        **form_data
+def generate_gradcam(model, img_array, img_path, layer_name, threshold=0.6):
+    """Generate Grad-CAM heatmap and extract clickable regions."""
+    grad_model = tf.keras.models.Model(
+        [model.inputs], [model.get_layer(layer_name).output, model.output]
     )
+    with tf.GradientTape() as tape:
+        conv_outputs, predictions = grad_model(img_array)
+        loss = predictions[:, 0]
 
-# =========================
-# Run Server
-# =========================
+    grads = tape.gradient(loss, conv_outputs)
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
+    conv_outputs = conv_outputs[0]
+    heatmap = tf.reduce_sum(tf.multiply(pooled_grads, conv_outputs), axis=-1)
+    heatmap = np.maximum(heatmap, 0)
+    heatmap /= tf.reduce_max(heatmap)
+    heatmap = heatmap.numpy()
+
+    # Save superimposed Grad-CAM
+    img = cv2.imread(img_path)
+    heatmap_resized = cv2.resize(heatmap, (img.shape[1], img.shape[0]))
+    heatmap_uint8 = np.uint8(255 * heatmap_resized)
+    heatmap_color = cv2.applyColorMap(heatmap_uint8, cv2.COLORMAP_JET)
+    superimposed_img = heatmap_color * 0.4 + img
+
+    gradcam_filename = f"gradcam_{datetime.now().strftime('%Y%m%d%H%M%S')}.jpg"
+    cam_path = os.path.join(app.config['UPLOAD_FOLDER'], gradcam_filename)
+    cv2.imwrite(cam_path, superimposed_img)
+
+    # Extract regions above threshold
+    mask = np.uint8(heatmap_resized > threshold) * 255
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    regions = []
+    for cnt in contours:
+        x, y, w, h = cv2.boundingRect(cnt)
+        explanation = f"AI detected unusual patterns in this region (size {w}x{h} px)"
+        regions.append({"x": int(x), "y": int(y), "width": int(w), "height": int(h), "explanation": explanation})
+
+    return gradcam_filename, regions
+
 if __name__ == '__main__':
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)

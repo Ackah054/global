@@ -1,118 +1,222 @@
-<div id="chat-widget" class="chat-widget">
-  <div id="chat-header">🩺 Health Chatbot</div>
-  <div id="chat-body"></div>
-  <input id="chat-input" type="text" placeholder="Type your answer..." />
+<!-- Floating AI Button -->
+<div id="chat-circle" class="chat-circle">AI</div>
+
+<!-- Chatbox -->
+<div id="chat-box" class="chat-box">
+  <div class="chat-header">
+    AI Chat Assistant
+    <button id="clear-chat" class="clear-btn">Clear</button>
+    <button id="close-chat" class="close-btn">&times;</button>
+  </div>
+  <div id="chat-content" class="chat-content"></div>
+  <div class="chat-input-box">
+    <input id="user-input" type="text" placeholder="Type your answer..." />
+    <button id="send-btn">Send</button>
+  </div>
 </div>
 
 <style>
-.chat-widget {
+/* Floating Circle Button */
+.chat-circle {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 300px;
-  height: 400px;
-  background: white;
-  border: 2px solid #007bff;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  font-family: Arial, sans-serif;
-}
-#chat-header {
   background: #007bff;
   color: white;
-  padding: 8px;
   font-weight: bold;
-  border-radius: 10px 10px 0 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  z-index: 1000;
 }
-#chat-body {
+
+/* Chatbox */
+.chat-box {
+  display: none;
+  position: fixed;
+  bottom: 90px;
+  right: 20px;
+  width: 350px;
+  height: 450px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.chat-header {
+  background: #007bff;
+  color: white;
+  padding: 10px;
+  font-size: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-content {
   flex: 1;
   padding: 10px;
   overflow-y: auto;
   font-size: 14px;
 }
-#chat-input {
+
+.chat-input-box {
+  display: flex;
+  border-top: 1px solid #ddd;
+}
+
+.chat-input-box input {
+  flex: 1;
   border: none;
-  border-top: 1px solid #ccc;
-  padding: 8px;
+  padding: 10px;
   font-size: 14px;
+}
+
+.chat-input-box button {
+  background: #007bff;
+  border: none;
+  color: white;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.clear-btn, .close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
 }
 </style>
 
 <script>
-let messages = [];
-let questionIndex = 0;
-let mode = "";
+document.addEventListener("DOMContentLoaded", function() {
+  const chatCircle = document.getElementById("chat-circle");
+  const chatBox = document.getElementById("chat-box");
+  const closeChat = document.getElementById("close-chat");
+  const sendBtn = document.getElementById("send-btn");
+  const userInput = document.getElementById("user-input");
+  const chatContent = document.getElementById("chat-content");
+  const clearChat = document.getElementById("clear-chat");
 
-const questions = {
-  stroke: [
-    "Do you have high blood pressure? (yes/no)",
-    "Do you smoke? (yes/no)",
-    "Do you have diabetes? (yes/no)",
-    "Do you exercise less than 3 times a week? (yes/no)"
-  ],
-  tb: [
-    "Have you been coughing for more than 2 weeks? (yes/no)",
-    "Do you have night sweats? (yes/no)",
-    "Have you lost weight recently? (yes/no)",
-    "Have you been in contact with a TB patient? (yes/no)"
-  ]
-};
+  let mode = null;
+  let currentQuestionIndex = 0;
+  let answers = [];
 
-function addMessage(text, sender="bot") {
-  const body = document.getElementById("chat-body");
-  const msg = document.createElement("div");
-  msg.textContent = (sender==="bot" ? "🤖 " : "🧑 ") + text;
-  body.appendChild(msg);
-  body.scrollTop = body.scrollHeight;
-}
+  const questions = {
+    tb: [
+      "Do you have a persistent cough lasting more than 2 weeks?",
+      "Have you been coughing up blood?",
+      "Do you experience night sweats?",
+      "Do you feel chest pain?",
+      "Have you lost weight recently?",
+      "Do you often feel fatigued or weak?"
+    ],
+    stroke: [
+      "Have you experienced sudden weakness on one side of the body?",
+      "Do you have difficulty speaking or understanding speech?",
+      "Have you experienced sudden vision problems?",
+      "Do you have sudden dizziness or loss of balance?",
+      "Have you had a severe sudden headache?",
+      "Has your face drooped on one side suddenly?"
+    ]
+  };
 
-document.getElementById("chat-input").addEventListener("keydown", function(e){
-  if (e.key === "Enter") {
-    let input = this.value.trim().toLowerCase();
-    if (!input) return;
-    addMessage(input, "user");
-    this.value = "";
+  // Open chatbox
+  chatCircle.addEventListener("click", () => {
+    chatBox.style.display = "flex";
+    chatCircle.style.display = "none";
+    appendMessage("AI", "Hi 👋 Type 'TB' or 'Stroke' to begin your risk check.");
+  });
+
+  // Close chatbox
+  closeChat.addEventListener("click", () => {
+    chatBox.style.display = "none";
+    chatCircle.style.display = "flex";
+    resetChat();
+  });
+
+  // Clear chat
+  clearChat.addEventListener("click", () => {
+    chatContent.innerHTML = "";
+    resetChat();
+  });
+
+  // Send message
+  sendBtn.addEventListener("click", () => {
+    const msg = userInput.value.trim();
+    if (msg) {
+      appendMessage("You", msg);
+      processUserMessage(msg);
+      userInput.value = "";
+    }
+  });
+
+  function appendMessage(sender, text) {
+    const msgDiv = document.createElement("div");
+    msgDiv.innerHTML = `<strong>${sender}:</strong> ${text}`;
+    chatContent.appendChild(msgDiv);
+    chatContent.scrollTop = chatContent.scrollHeight;
+  }
+
+  function processUserMessage(msg) {
+    msg = msg.toLowerCase();
 
     if (!mode) {
-      if (input.includes("stroke")) {
-        mode = "stroke";
-        questionIndex = 0;
-        addMessage("Okay, let's assess Stroke risk.");
-        addMessage(questions.stroke[questionIndex]);
-      } else if (input.includes("tb")) {
+      if (msg.includes("tb")) {
         mode = "tb";
-        questionIndex = 0;
-        addMessage("Okay, let's assess TB risk.");
-        addMessage(questions.tb[questionIndex]);
+        appendMessage("AI", "Okay, let's check TB risk. Answer Yes/No.");
+        askNextQuestion();
+      } else if (msg.includes("stroke")) {
+        mode = "stroke";
+        appendMessage("AI", "Okay, let's check Stroke risk. Answer Yes/No.");
+        askNextQuestion();
       } else {
-        addMessage("Please type 'stroke' or 'tb' to begin.");
+        appendMessage("AI", "Please type 'TB' or 'Stroke' to begin.");
       }
       return;
     }
 
-    // Store answers
-    messages.push(input);
+    // Collect answers
+    if (mode && currentQuestionIndex < questions[mode].length) {
+      answers.push(msg);
 
-    // Ask next question or evaluate
-    questionIndex++;
-    if (questionIndex < questions[mode].length) {
-      addMessage(questions[mode][questionIndex]);
-    } else {
-      fetch("/chatbot", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ mode: mode, answers: messages })
-      })
-      .then(res => res.json())
-      .then(data => {
-        addMessage(data.result);
-        // reset
-        messages = [];
-        mode = "";
-        questionIndex = 0;
-      });
+      // Ask next question
+      currentQuestionIndex++;
+      if (currentQuestionIndex < questions[mode].length) {
+        askNextQuestion();
+      } else {
+        // Done asking → send to backend
+        fetch("/chatbot", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({mode, answers})
+        })
+        .then(res => res.json())
+        .then(data => {
+          appendMessage("AI", data.result);
+          resetChat();
+        });
+      }
     }
+  }
+
+  function askNextQuestion() {
+    appendMessage("AI", questions[mode][currentQuestionIndex]);
+  }
+
+  function resetChat() {
+    mode = null;
+    currentQuestionIndex = 0;
+    answers = [];
   }
 });
 </script>

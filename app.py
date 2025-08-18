@@ -219,7 +219,11 @@ def generate_gradcam(model, img_array, img_path, layer_name, threshold=0.6):
 
 
 
+
+
 from flask import Flask, render_template, request, jsonify
+
+app = Flask(__name__)
 
 @app.route("/chatbot", methods=["POST"])
 def chatbot():
@@ -227,25 +231,23 @@ def chatbot():
     mode = data.get("mode")
     answers = data.get("answers", [])
 
-    score = 0
-    for ans in answers:
-        if ans in ["yes", "y"]:  
-            score += 1
+    score = sum(1 for ans in answers if ans.lower() in ["yes", "y"])
 
     if mode == "stroke":
         if score >= 2:
-            result = "⚠️ You may be at HIGH RISK of Stroke. Please take a scan to confirm."
+            result = f"⚠️ You answered 'Yes' to {score} Stroke risk factors. HIGH RISK. Please take a scan immediately."
         else:
-            result = "✅ Your Stroke risk seems low, but consult a doctor if symptoms persist."
+            result = f"✅ You answered 'Yes' to {score} Stroke risk factors. Your risk seems low, but consult a doctor if symptoms persist."
     elif mode == "tb":
         if score >= 2:
-            result = "⚠️ You may be at HIGH RISK of TB. Please take a scan to confirm."
+            result = f"⚠️ You answered 'Yes' to {score} TB symptoms. HIGH RISK. Please take a scan/test immediately."
         else:
-            result = "✅ Your TB risk seems low, but consult a doctor if symptoms persist."
+            result = f"✅ You answered 'Yes' to {score} TB symptoms. Your risk seems low, but consult a doctor if symptoms persist."
     else:
         result = "❌ Invalid selection."
 
     return jsonify({"result": result})
+
 
 
 

@@ -1,3 +1,768 @@
+<!----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stroke Detection - Brain Scan Capture</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #e74c3c 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(15px);
+      border-radius: 25px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+      padding: 35px;
+      text-align: center;
+      max-width: 900px;
+      width: 100%;
+      animation: slideInUp 0.8s ease-out;
+      border: 1px solid rgba(231, 76, 60, 0.1);
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      margin-bottom: 35px;
+      position: relative;
+    }
+
+    .logo {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 35px;
+      color: white;
+      animation: brainPulse 3s infinite;
+      box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+    }
+
+    @keyframes brainPulse {
+      0%, 100% { 
+        transform: scale(1);
+        box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+      }
+      50% { 
+        transform: scale(1.08);
+        box-shadow: 0 15px 40px rgba(231, 76, 60, 0.5);
+      }
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-size: 2.3rem;
+      margin-bottom: 12px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #2c3e50, #e74c3c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: #7f8c8d;
+      font-size: 1.2rem;
+      margin-bottom: 25px;
+      font-weight: 500;
+    }
+
+    .emergency-notice {
+      background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+      border: 2px solid #f39c12;
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 25px;
+      color: #856404;
+      font-weight: 600;
+      animation: urgentGlow 2s infinite alternate;
+    }
+
+    @keyframes urgentGlow {
+      from { box-shadow: 0 5px 15px rgba(243, 156, 18, 0.2); }
+      to { box-shadow: 0 8px 25px rgba(243, 156, 18, 0.4); }
+    }
+
+    .camera-section {
+      background: linear-gradient(135deg, #f8f9fa, #ffffff);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      border: 2px solid rgba(231, 76, 60, 0.1);
+    }
+
+    .section-title {
+      color: #2c3e50;
+      font-size: 1.4rem;
+      margin-bottom: 25px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    #videoElement {
+      width: 100%;
+      max-width: 550px;
+      height: 350px;
+      border: 4px solid #e9ecef;
+      border-radius: 20px;
+      background: #000;
+      object-fit: cover;
+      margin-bottom: 25px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s ease;
+    }
+
+    #videoElement:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    #capturedCanvas {
+      width: 100%;
+      max-width: 550px;
+      height: 350px;
+      border: 4px solid #e74c3c;
+      border-radius: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 15px 35px rgba(231, 76, 60, 0.2);
+      display: none;
+    }
+
+    #uploadPreview {
+      width: 100%;
+      max-width: 550px;
+      max-height: 350px;
+      border: 4px solid #3498db;
+      border-radius: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 15px 35px rgba(52, 152, 219, 0.2);
+      display: none;
+      object-fit: cover;
+    }
+
+    .btn {
+      padding: 14px 35px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 12px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.6s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(52, 152, 219, 0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #27ae60, #229954);
+      color: white;
+      box-shadow: 0 6px 20px rgba(39, 174, 96, 0.3);
+    }
+
+    .btn-success:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(39, 174, 96, 0.4);
+    }
+
+    .btn-info {
+      background: linear-gradient(135deg, #17a2b8, #117a8b);
+      color: white;
+      box-shadow: 0 6px 20px rgba(23, 162, 184, 0.3);
+    }
+
+    .btn-info:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(23, 162, 184, 0.4);
+    }
+
+    .btn-stroke {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+      font-size: 20px;
+      padding: 18px 45px;
+      animation: criticalPulse 2s infinite alternate;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes criticalPulse {
+      from { 
+        box-shadow: 0 8px 25px rgba(231, 76, 60, 0.4);
+        transform: scale(1);
+      }
+      to { 
+        box-shadow: 0 12px 40px rgba(231, 76, 60, 0.7);
+        transform: scale(1.02);
+      }
+    }
+
+    .btn-stroke:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 15px 45px rgba(231, 76, 60, 0.6);
+      animation: none;
+    }
+
+    .upload-section {
+      background: linear-gradient(135deg, #f8f9fa, #ffffff);
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      border: 3px dashed #dee2e6;
+      transition: all 0.4s ease;
+      cursor: pointer;
+    }
+
+    .upload-section:hover {
+      border-color: #e74c3c;
+      background: linear-gradient(135deg, #fff5f5, #ffffff);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(231, 76, 60, 0.1);
+    }
+
+    .upload-icon {
+      font-size: 55px;
+      color: #6c757d;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .upload-section:hover .upload-icon {
+      color: #e74c3c;
+      transform: scale(1.1);
+    }
+
+    .upload-text {
+      color: #6c757d;
+      font-size: 1.2rem;
+      margin-bottom: 25px;
+      font-weight: 500;
+    }
+
+    .status-message {
+      padding: 18px;
+      border-radius: 12px;
+      margin: 25px 0;
+      font-weight: 600;
+      display: none;
+      animation: statusSlide 0.5s ease-out;
+    }
+
+    @keyframes statusSlide {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .status-success {
+      background: linear-gradient(135deg, #d4edda, #c3e6cb);
+      color: #155724;
+      border: 2px solid #27ae60;
+    }
+
+    .status-info {
+      background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+      color: #0c5460;
+      border: 2px solid #17a2b8;
+    }
+
+    .status-error {
+      background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+      color: #721c24;
+      border: 2px solid #e74c3c;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 25px;
+    }
+
+    .divider {
+      margin: 40px 0;
+      position: relative;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #dee2e6, transparent);
+    }
+
+    .divider span {
+      background: rgba(255, 255, 255, 0.98);
+      padding: 0 25px;
+      color: #6c757d;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #e74c3c;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 25px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .loading-subtext {
+      font-size: 1rem;
+      opacity: 0.8;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(108, 117, 125, 0.9);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .back-btn:hover {
+      background: rgba(90, 98, 104, 0.9);
+      transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 25px;
+        margin: 15px;
+        border-radius: 20px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      #videoElement, #capturedCanvas, #uploadPreview {
+        height: 280px;
+      }
+
+      .btn {
+        padding: 12px 25px;
+        font-size: 14px;
+        margin: 8px;
+      }
+
+      .btn-stroke {
+        font-size: 18px;
+        padding: 15px 35px;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .logo {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-btn">← Back to Menu</a>
+  
+  <div class="container">
+    <div class="header">
+      <div class="logo">🧠</div>
+      <h1>Stroke Detection - Brain Scan Capture</h1>
+      <p class="subtitle">Capture or upload brain CT/MRI scans for emergency AI analysis</p>
+      
+      <div class="emergency-notice">
+        ⚠️ <strong>CRITICAL:</strong> Time is crucial in stroke detection. Seek immediate medical attention for any stroke symptoms.
+      </div>
+    </div>
+
+    <!-- Camera Section --
+    <div class="camera-section">
+      <h3 class="section-title">📹 Camera Capture</h3>
+      <video id="videoElement" autoplay playsinline></video>
+      <canvas id="capturedCanvas"></canvas>
+      
+      <div class="controls">
+        <button class="btn btn-primary" id="startCameraBtn" onclick="startCamera()">
+          🎥 Access Camera
+        </button>
+        <button class="btn btn-success hidden" id="captureBtn" onclick="captureImage()">
+          📸 Capture Scan
+        </button>
+        <button class="btn btn-info hidden" id="retakeBtn" onclick="retakePhoto()">
+          🔄 Retake Photo
+        </button>
+      </div>
+      
+      <div class="status-message" id="cameraStatus"></div>
+    </div>
+
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <!-- Upload Section --
+    <form id="strokeForm" action="{{ url_for('predict_stroke') }}" method="POST" enctype="multipart/form-data">
+  <div class="upload-section" onclick="document.getElementById('imageInput').click()">
+    <div class="upload-icon">🧠</div>
+    <div class="upload-text">Click here to upload a brain CT or MRI scan</div>
+    
+    <!-- FIX: name should be 'image' --
+    <input type="file" id="imageInput" name="image" accept="image/*,.dcm" style="display: none;" onchange="previewImage(event)">
+    
+    <button type="button" class="btn btn-info">📤 Choose Brain Scan</button>
+  </div>
+
+  <img id="uploadPreview" alt="Uploaded Brain Scan Preview" />
+  <div class="status-message" id="uploadStatus"></div>
+
+
+  <!-- Results Button --
+<div class="controls">
+  <button type="submit" class="btn btn-stroke" id="resultsBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
+    🔬 ANALYZE FOR STROKE
+  </button>
+</div>
+
+
+  <!-- Results Button --
+  <div class="controls">
+    <button type="submit" class="btn btn-stroke" id="resultsBtn">
+      🔬 ANALYZE FOR STROKE
+    </button>
+  </div>
+------------------------------
+</form>
+  </div>
+  <div class="loading" id="loadingScreen">
+    <div class="spinner"></div>
+    <div class="loading-text">Analyzing brain scan with AI model...</div>
+    <div class="loading-subtext">Emergency analysis in progress - This may take a few seconds</div>
+  </div>
+
+  <script>
+    let stream = null;
+    let hasImage = false;
+    let currentImageData = null;
+
+    function startCamera() {
+      const video = document.getElementById('videoElement');
+      const startBtn = document.getElementById('startCameraBtn');
+      const captureBtn = document.getElementById('captureBtn');
+      const status = document.getElementById('cameraStatus');
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1280 }, 
+            height: { ideal: 720 }, 
+            facingMode: 'environment' 
+          } 
+        })
+        .then((mediaStream) => {
+          stream = mediaStream;
+          video.srcObject = mediaStream;
+          startBtn.classList.add('hidden');
+          captureBtn.classList.remove('hidden');
+          showStatus('cameraStatus', '✅ Camera activated! Position the brain scan and click capture.', 'success');
+        })
+        .catch((err) => {
+          console.error("Error accessing the camera: ", err);
+          showStatus('cameraStatus', '❌ Could not access camera. Please check permissions or use file upload.', 'error');
+        });
+      } else {
+        showStatus('cameraStatus', '❌ Camera not supported in this browser. Please use file upload.', 'error');
+      }
+    }
+
+    function captureImage() {
+      const video = document.getElementById('videoElement');
+      const canvas = document.getElementById('capturedCanvas');
+      const captureBtn = document.getElementById('captureBtn');
+      const retakeBtn = document.getElementById('retakeBtn');
+      const resultsBtn = document.getElementById('resultsBtn');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+      canvas.classList.add('fade-in');
+
+      captureBtn.classList.add('hidden');
+      retakeBtn.classList.remove('hidden');
+      resultsBtn.classList.remove('hidden');
+
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      hasImage = true;
+      currentImageData = canvas;
+      showStatus('cameraStatus', '✅ Brain scan captured! Click "ANALYZE FOR STROKE" for emergency analysis.', 'success');
+    }
+
+    function retakePhoto() {
+      const video = document.getElementById('videoElement');
+      const canvas = document.getElementById('capturedCanvas');
+      const captureBtn = document.getElementById('captureBtn');
+      const retakeBtn = document.getElementById('retakeBtn');
+      const resultsBtn = document.getElementById('resultsBtn');
+
+      video.style.display = 'block';
+      canvas.style.display = 'none';
+      retakeBtn.classList.add('hidden');
+      captureBtn.classList.remove('hidden');
+      resultsBtn.classList.add('hidden');
+
+      hasImage = false;
+      currentImageData = null;
+      startCamera();
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      const preview = document.getElementById('uploadPreview');
+      const resultsBtn = document.getElementById('resultsBtn');
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.style.display = "block";
+          preview.classList.add('fade-in');
+          resultsBtn.classList.remove('hidden');
+          hasImage = true;
+          currentImageData = file;
+          showStatus('uploadStatus', `✅ Brain scan "${file.name}" uploaded! Click "ANALYZE FOR STROKE" for emergency analysis.`, 'success');
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function showStatus(elementId, message, type) {
+      const statusElement = document.getElementById(elementId);
+      statusElement.textContent = message;
+      statusElement.className = `status-message status-${type}`;
+      statusElement.style.display = 'block';
+      
+      if (type !== 'error') {
+        setTimeout(() => {
+          statusElement.style.display = 'none';
+        }, 6000);
+      }
+    }
+
+    // Form submission handling
+    document.getElementById('strokeForm').addEventListener('submit', function(e) {
+      if (currentImageData instanceof HTMLCanvasElement) {
+        e.preventDefault();
+        
+        document.getElementById('loadingScreen').style.display = 'flex';
+        
+        const formData = new FormData();
+        currentImageData.toBlob(function(blob) {
+          if (!blob) {
+            alert('Error capturing image from camera.');
+            document.getElementById('loadingScreen').style.display = 'none';
+            return;
+          }
+          formData.append('file', blob, 'brain_scan_captured.png');
+          
+          fetch('/predict_stroke', {
+            method: 'POST',
+            body: formData
+          })
+          .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.text();
+          })
+          .then(html => {
+            document.getElementById('loadingScreen').style.display = 'none';
+            document.open();
+            document.write(html);
+            document.close();
+          })
+          .catch(error => {
+            console.error('❌ Error from backend:', error);
+            alert('Server error during stroke analysis. Please try again.');
+            document.getElementById('loadingScreen').style.display = 'none';
+          });
+        }, 'image/png');
+      } else {
+        // Regular file upload - let form submit normally
+        document.getElementById('loadingScreen').style.display = 'flex';
+      }
+    });
+
+    // Cleanup camera stream on page unload
+    window.addEventListener('beforeunload', () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    });
+
+    /////////////////////////////////////
+    const resultsBtn = document.getElementById("resultsBtn");
+  const fileInput = document.getElementById("imageInput"); // change ID if your file input has a different one
+  const cameraInput = document.getElementById("cameraInput"); // optional, if you have camera capture
+
+  function enableAnalyzeButton() {
+    resultsBtn.disabled = false;
+    resultsBtn.style.opacity = "1";
+    resultsBtn.style.cursor = "pointer";
+  }
+
+  // Enable when file is uploaded
+  if (fileInput) {
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length > 0) {
+        enableAnalyzeButton();
+      }
+    });
+  }
+
+  // Enable when camera image is captured
+  if (cameraInput) {
+    cameraInput.addEventListener("change", () => {
+      if (cameraInput.files.length > 0) {
+        enableAnalyzeButton();
+      }
+    });
+  }
+  </script>
+
+</body>
+</html>
+-->
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -526,36 +1291,26 @@
 
     <!-- Upload Section -->
     <form id="strokeForm" action="{{ url_for('predict_stroke') }}" method="POST" enctype="multipart/form-data">
-  <div class="upload-section" onclick="document.getElementById('imageInput').click()">
-    <div class="upload-icon">🧠</div>
-    <div class="upload-text">Click here to upload a brain CT or MRI scan</div>
-    
-    <!-- FIX: name should be 'image' -->
-    <input type="file" id="imageInput" name="image" accept="image/*,.dcm" style="display: none;" onchange="previewImage(event)">
-    
-    <button type="button" class="btn btn-info">📤 Choose Brain Scan</button>
-  </div>
+      <div class="upload-section" onclick="document.getElementById('imageInput').click()">
+        <div class="upload-icon">🧠</div>
+        <div class="upload-text">Click here to upload a brain CT or MRI scan</div>
+        
+        <!-- FIX: name should be 'image' -->
+        <input type="file" id="imageInput" name="image" accept="image/*,.dcm" style="display: none;" onchange="previewImage(event)">
+        
+        <button type="button" class="btn btn-info">📤 Choose Brain Scan</button>
+      </div>
 
-  <img id="uploadPreview" alt="Uploaded Brain Scan Preview" />
-  <div class="status-message" id="uploadStatus"></div>
+      <img id="uploadPreview" alt="Uploaded Brain Scan Preview" />
+      <div class="status-message" id="uploadStatus"></div>
 
-
-  <!-- Results Button -->
-<div class="controls">
-  <button type="submit" class="btn btn-stroke" id="resultsBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
-    🔬 ANALYZE FOR STROKE
-  </button>
-</div>
-
-
-  <!-- Results Button --
-  <div class="controls">
-    <button type="submit" class="btn btn-stroke" id="resultsBtn">
-      🔬 ANALYZE FOR STROKE
-    </button>
-  </div>
--->
-</form>
+      <!-- Results Button -->
+      <div class="controls">
+        <button type="submit" class="btn btn-stroke" id="resultsBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
+          🔬 ANALYZE FOR STROKE
+        </button>
+      </div>
+    </form>
   </div>
   <div class="loading" id="loadingScreen">
     <div class="spinner"></div>
@@ -617,6 +1372,10 @@
       captureBtn.classList.add('hidden');
       retakeBtn.classList.remove('hidden');
       resultsBtn.classList.remove('hidden');
+      
+      resultsBtn.disabled = false;
+      resultsBtn.style.opacity = '1';
+      resultsBtn.style.cursor = 'pointer';
 
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -639,6 +1398,10 @@
       retakeBtn.classList.add('hidden');
       captureBtn.classList.remove('hidden');
       resultsBtn.classList.add('hidden');
+      
+      resultsBtn.disabled = true;
+      resultsBtn.style.opacity = '0.5';
+      resultsBtn.style.cursor = 'not-allowed';
 
       hasImage = false;
       currentImageData = null;
@@ -729,32 +1492,22 @@
 
     /////////////////////////////////////
     const resultsBtn = document.getElementById("resultsBtn");
-  const fileInput = document.getElementById("imageInput"); // change ID if your file input has a different one
-  const cameraInput = document.getElementById("cameraInput"); // optional, if you have camera capture
+    const fileInput = document.getElementById("imageInput"); // change ID if your file input has a different one
 
-  function enableAnalyzeButton() {
-    resultsBtn.disabled = false;
-    resultsBtn.style.opacity = "1";
-    resultsBtn.style.cursor = "pointer";
-  }
+    function enableAnalyzeButton() {
+      resultsBtn.disabled = false;
+      resultsBtn.style.opacity = "1";
+      resultsBtn.style.cursor = "pointer";
+    }
 
-  // Enable when file is uploaded
-  if (fileInput) {
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files.length > 0) {
-        enableAnalyzeButton();
-      }
-    });
-  }
-
-  // Enable when camera image is captured
-  if (cameraInput) {
-    cameraInput.addEventListener("change", () => {
-      if (cameraInput.files.length > 0) {
-        enableAnalyzeButton();
-      }
-    });
-  }
+    // Enable when file is uploaded
+    if (fileInput) {
+      fileInput.addEventListener("change", () => {
+        if (fileInput.files.length > 0) {
+          enableAnalyzeButton();
+        }
+      });
+    }
   </script>
 
 </body>

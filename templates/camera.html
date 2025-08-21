@@ -1,3 +1,4 @@
+<!----
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -398,7 +399,7 @@
       <p class="subtitle">Capture or upload chest X-ray images for AI analysis</p>
     </div>
 
-    <!-- Camera Section -->
+    <!-- Camera Section --
     <div class="camera-section">
       <h3 style="color: #495057; margin-bottom: 20px;">📹 Camera Capture</h3>
       <video id="videoElement" autoplay playsinline></video>
@@ -469,7 +470,7 @@
     </button>
   </div>
 </form>-->
-<!--end of formsknjinhnhbuhbnhjbhbgbggbgvgvgvhgvghvgvgjvvvgvbbbybybuybbgbbhbbbbbybybyb-->
+<!--end of formsknjinhnhbuhbnhjbhbgbggbgvgvgvhgvghvgvgjvvvgvbbbybybuybbgbbhbbbbbybybyb--
 
 
 <div class="loading" id="loadingScreen">
@@ -483,7 +484,7 @@
     <div>Analyzing image with AI model...</div>
     <div style="font-size: 14px; margin-top: 10px;">This may take a few seconds</div>
   </div>
--->
+---------------------------
   let currentImageData = null; 
 
 
@@ -772,5 +773,680 @@ const resultsBtn = document.getElementById("resultsBtn");
 </script>
 
 
+</body>
+</html>
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Medical Image Capture</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      text-align: center;
+      max-width: 800px;
+      width: 100%;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .header {
+      margin-bottom: 30px;
+    }
+
+    .logo {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 15px;
+      background: linear-gradient(45deg, #4CAF50, #2196F3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      color: white;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    h1 {
+      color: #2c3e50;
+      font-size: 2rem;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      color: #7f8c8d;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+    }
+
+    .camera-section {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    #videoElement {
+      width: 100%;
+      max-width: 500px;
+      height: 300px;
+      border: 3px solid #e9ecef;
+      border-radius: 15px;
+      background: #000;
+      object-fit: cover;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    #capturedCanvas {
+      width: 100%;
+      max-width: 500px;
+      height: 300px;
+      border: 3px solid #28a745;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      display: none;
+    }
+
+    #uploadPreview {
+      width: 100%;
+      max-width: 500px;
+      max-height: 300px;
+      border: 3px solid #17a2b8;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      display: none;
+      object-fit: cover;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 10px;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #007bff, #0056b3);
+      color: white;
+      box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+    }
+
+    .btn-success {
+      background: linear-gradient(45deg, #28a745, #1e7e34);
+      color: white;
+      box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    }
+
+    .btn-info {
+      background: linear-gradient(45deg, #17a2b8, #117a8b);
+      color: white;
+      box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+    }
+
+    .btn-info:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+    }
+
+    .btn-results {
+      background: linear-gradient(45deg, #e60023, #c4001d);
+      color: white;
+      box-shadow: 0 5px 15px rgba(230, 0, 35, 0.3);
+      font-size: 18px;
+      padding: 15px 40px;
+      animation: glow 2s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 5px 15px rgba(230, 0, 35, 0.3); }
+      to { box-shadow: 0 8px 30px rgba(230, 0, 35, 0.6); }
+    }
+
+    .btn-results:hover {
+      transform: translateY(-3px) scale(1.05);
+      box-shadow: 0 10px 35px rgba(230, 0, 35, 0.5);
+    }
+
+    .upload-section {
+      background: #f8f9fa;
+      border-radius: 15px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      border: 2px dashed #dee2e6;
+      transition: all 0.3s ease;
+    }
+
+    .upload-section:hover {
+      border-color: #17a2b8;
+      background: #e8f4f8;
+    }
+
+    .upload-icon {
+      font-size: 48px;
+      color: #6c757d;
+      margin-bottom: 15px;
+    }
+
+    .upload-text {
+      color: #6c757d;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+    }
+
+    .status-message {
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-weight: 600;
+      display: none;
+    }
+
+    .status-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .divider {
+      margin: 30px 0;
+      position: relative;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #dee2e6;
+    }
+
+    .divider span {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 0 20px;
+      color: #6c757d;
+      font-weight: 600;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .loading {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+        margin: 10px;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      #videoElement, #capturedCanvas, #uploadPreview {
+        height: 250px;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+        margin: 5px;
+      }
+
+      .btn-results {
+        font-size: 16px;
+        padding: 12px 30px;
+      }
+
+      .controls {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(108, 117, 125, 0.9);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .back-btn:hover {
+      background: rgba(90, 98, 104, 0.9);
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-btn">← Back to Menu</a>
+    
+  <div class="container">
+    <div class="header">
+      <div class="logo">📷</div>
+      <h1>TB Detection - Image Capture</h1>
+      <p class="subtitle">Capture or upload chest X-ray images for AI analysis</p>
+    </div>
+
+    <!-- Camera Section -->
+    <div class="camera-section">
+      <h3 style="color: #495057; margin-bottom: 20px;">📹 Camera Capture</h3>
+      <video id="videoElement" autoplay playsinline></video>
+      <canvas id="capturedCanvas"></canvas>
+      
+      <div class="controls">
+        <button class="btn btn-primary" id="startCameraBtn" onclick="startCamera()">
+          🎥 Access Camera
+        </button>
+        <button class="btn btn-success hidden" id="captureBtn" onclick="captureImage()">
+          📸 Capture Photo
+        </button>
+        <button class="btn btn-info hidden" id="retakeBtn" onclick="retakePhoto()">
+          🔄 Retake Photo
+        </button>
+        <!-- Added analyze button for camera capture -->
+        <button class="btn btn-results hidden" id="analyzeCameraBtn" onclick="analyzeCapturedImage()">
+          🔬 ANALYZE FOR TB
+        </button>
+      </div>
+      
+      <div class="status-message" id="cameraStatus"></div>
+    </div>
+
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <!-- Upload Section -->
+    <form id="imageUploadForm" enctype="multipart/form-data">
+      <div class="upload-section" onclick="document.getElementById('imageInput').click()">
+        <div class="upload-icon">📁</div>
+        <div class="upload-text">Click here to upload a chest X-ray image</div>
+        <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;" onchange="previewImage(event)">
+        <button type="button" class="btn btn-info">📤 Choose File</button>
+      </div>
+
+      <img id="uploadPreview" alt="Uploaded Image Preview" />
+      <div class="status-message" id="uploadStatus"></div>
+
+      <div class="controls">
+        <button type="submit" class="btn btn-results" id="uploadAnalyzeBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
+          🔬 ANALYZE FOR TB
+        </button>
+      </div>
+    </form>
+
+    <div class="loading" id="loadingScreen">
+      <div class="spinner"></div>
+      <div class="loading-text">Analyzing chest X-ray with AI model...</div>
+      <div class="loading-subtext">TB analysis in progress - This may take a few seconds</div>
+    </div>
+  </div>
+
+  <script>
+    let stream = null;
+    let capturedImageData = null;
+
+    function startCamera() {
+      const video = document.getElementById('videoElement');
+      const startBtn = document.getElementById('startCameraBtn');
+      const captureBtn = document.getElementById('captureBtn');
+      const status = document.getElementById('cameraStatus');
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ 
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' } 
+        })
+        .then((mediaStream) => {
+          stream = mediaStream;
+          video.srcObject = mediaStream;
+          startBtn.classList.add('hidden');
+          captureBtn.classList.remove('hidden');
+          showStatus('cameraStatus', 'Camera activated! Position the chest X-ray and click capture.', 'success');
+        })
+        .catch((err) => {
+          console.error("Error accessing the camera: ", err);
+          showStatus('cameraStatus', 'Could not access camera. Please check permissions.', 'error');
+        });
+      } else {
+        showStatus('cameraStatus', 'Camera not supported in this browser.', 'error');
+      }
+    }
+
+    function captureImage() {
+      const video = document.getElementById('videoElement');
+      const canvas = document.getElementById('capturedCanvas');
+      const captureBtn = document.getElementById('captureBtn');
+      const retakeBtn = document.getElementById('retakeBtn');
+      const analyzeCameraBtn = document.getElementById('analyzeCameraBtn');
+
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Store captured image data
+      capturedImageData = canvas;
+
+      // Hide video, show canvas
+      video.style.display = 'none';
+      canvas.style.display = 'block';
+      canvas.classList.add('fade-in');
+
+      // Update button visibility
+      captureBtn.classList.add('hidden');
+      retakeBtn.classList.remove('hidden');
+      analyzeCameraBtn.classList.remove('hidden');
+
+      // Stop camera stream
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
+      showStatus('cameraStatus', 'Photo captured! Click "ANALYZE FOR TB" to get results.', 'success');
+    }
+
+    function retakePhoto() {
+      const video = document.getElementById('videoElement');
+      const canvas = document.getElementById('capturedCanvas');
+      const captureBtn = document.getElementById('captureBtn');
+      const retakeBtn = document.getElementById('retakeBtn');
+      const analyzeCameraBtn = document.getElementById('analyzeCameraBtn');
+
+      // Reset display
+      video.style.display = 'block';
+      canvas.style.display = 'none';
+
+      // Reset buttons
+      retakeBtn.classList.add('hidden');
+      analyzeCameraBtn.classList.add('hidden');
+      captureBtn.classList.remove('hidden');
+
+      // Clear captured data
+      capturedImageData = null;
+
+      // Restart camera
+      startCamera();
+    }
+
+    function analyzeCapturedImage() {
+      if (!capturedImageData) {
+        alert('No captured image found!');
+        return;
+      }
+
+      document.getElementById('loadingScreen').style.display = 'flex';
+
+      // Convert canvas to blob and send to backend
+      capturedImageData.toBlob(function(blob) {
+        if (!blob) {
+          alert('Error processing captured image.');
+          document.getElementById('loadingScreen').style.display = 'none';
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', blob, 'captured.png');
+
+        // Get patient data from localStorage if available
+        const formDataJSON = localStorage.getItem('tbPatientData');
+        if (formDataJSON) {
+          const patientData = JSON.parse(formDataJSON);
+          for (const key in patientData) {
+            if (Array.isArray(patientData[key])) {
+              patientData[key].forEach(val => formData.append(key, val));
+            } else {
+              formData.append(key, patientData[key]);
+            }
+          }
+        }
+
+        sendToBackend(formData);
+      }, 'image/png');
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      const preview = document.getElementById('uploadPreview');
+      const uploadAnalyzeBtn = document.getElementById('uploadAnalyzeBtn');
+
+      if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.style.display = "block";
+          preview.classList.add('fade-in');
+          
+          // Enable analyze button
+          uploadAnalyzeBtn.disabled = false;
+          uploadAnalyzeBtn.style.opacity = "1";
+          uploadAnalyzeBtn.style.cursor = "pointer";
+          
+          showStatus('uploadStatus', `Image "${file.name}" uploaded! Click "ANALYZE FOR TB" to get results.`, 'success');
+        }
+
+        reader.readAsDataURL(file);
+      }
+    }
+
+    document.getElementById('imageUploadForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const imageFile = document.getElementById('imageInput').files[0];
+      if (!imageFile) {
+        alert("Please select an image.");
+        return;
+      }
+
+      document.getElementById('loadingScreen').style.display = 'flex';
+
+      const formData = new FormData();
+      formData.append('image', imageFile);
+
+      // Get patient data from localStorage if available
+      const formDataJSON = localStorage.getItem('tbPatientData');
+      if (formDataJSON) {
+        const patientData = JSON.parse(formDataJSON);
+        for (const key in patientData) {
+          if (Array.isArray(patientData[key])) {
+            patientData[key].forEach(val => formData.append(key, val));
+          } else {
+            formData.append(key, patientData[key]);
+          }
+        }
+      }
+
+      sendToBackend(formData);
+    });
+
+    function sendToBackend(formData) {
+      fetch('/predict_tb', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.text().then(html => {
+            document.open();
+            document.write(html);
+            document.close();
+          });
+        } else {
+          return response.json().then(data => {
+            alert("Error: " + (data.error || "Something went wrong."));
+            document.getElementById('loadingScreen').style.display = 'none';
+          });
+        }
+      })
+      .catch(error => {
+        console.error("❌ Analysis error:", error);
+        alert("Analysis failed. Please try again.");
+        document.getElementById('loadingScreen').style.display = 'none';
+      });
+    }
+
+    function showStatus(elementId, message, type) {
+      const statusElement = document.getElementById(elementId);
+      statusElement.textContent = message;
+      statusElement.className = `status-message status-${type === 'success' ? 'success' : 'info'}`;
+      statusElement.style.display = 'block';
+
+      setTimeout(() => {
+        statusElement.style.display = 'none';
+      }, 5000);
+    }
+
+    // Clean up camera stream when page unloads
+    window.addEventListener('beforeunload', () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    });
+  </script>
 </body>
 </html>

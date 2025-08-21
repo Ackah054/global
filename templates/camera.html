@@ -484,45 +484,34 @@
     <div style="font-size: 14px; margin-top: 10px;">This may take a few seconds</div>
   </div>
 -->
+  let currentImageData = null; 
+
 
   <script>
 let stream = null;
+let currentImageData = null; // Canvas or File
 let hasImage = false;
-let currentImageData = null;
 
 function startCamera() {
   const video = document.getElementById('videoElement');
-  const startBtn = document.getElementById('startCameraBtn');
-  const captureBtn = document.getElementById('captureBtn');
-  const status = document.getElementById('cameraStatus');
-
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ 
-      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' } 
+    navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'environment' }
     })
     .then((mediaStream) => {
       stream = mediaStream;
       video.srcObject = mediaStream;
-      startBtn.classList.add('hidden');
-      captureBtn.classList.remove('hidden');
-      showStatus('cameraStatus', 'Camera activated! Position the chest X-ray and click capture.', 'success');
+      showStatus('cameraStatus', '📷 Camera activated! Position the X-ray/CT and click capture.', 'success');
     })
-    .catch((err) => {
-      console.error("Error accessing the camera: ", err);
-      showStatus('cameraStatus', 'Could not access camera. Please check permissions.', 'error');
+    .catch(() => {
+      showStatus('cameraStatus', '⚠️ Could not access camera. Please check permissions.', 'error');
     });
-  } else {
-    showStatus('cameraStatus', 'Camera not supported in this browser.', 'error');
   }
 }
 
 function captureImage() {
   const video = document.getElementById('videoElement');
   const canvas = document.getElementById('capturedCanvas');
-  const captureBtn = document.getElementById('captureBtn');
-  const retakeBtn = document.getElementById('retakeBtn');
-  const resultsBtn = document.getElementById('resultsBtn');
-
   const ctx = canvas.getContext('2d');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -530,97 +519,67 @@ function captureImage() {
 
   video.style.display = 'none';
   canvas.style.display = 'block';
-  canvas.classList.add('fade-in');
 
-  captureBtn.classList.add('hidden');
-  retakeBtn.classList.remove('hidden');
-  resultsBtn.classList.remove('hidden');
+  if (stream) stream.getTracks().forEach(track => track.stop());
 
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-  }
-
-  hasImage = true;
   currentImageData = canvas;
-  showStatus('cameraStatus', 'Photo captured! Click "ANALYZE FOR TB" to get results.', 'success');
-}
-
-function retakePhoto() {
-  const video = document.getElementById('videoElement');
-  const canvas = document.getElementById('capturedCanvas');
-  const captureBtn = document.getElementById('captureBtn');
-  const retakeBtn = document.getElementById('retakeBtn');
-  const resultsBtn = document.getElementById('resultsBtn');
-
-  video.style.display = 'block';
-  canvas.style.display = 'none';
-
-  retakeBtn.classList.add('hidden');
-  captureBtn.classList.remove('hidden');
-  resultsBtn.classList.add('hidden');
-
-  hasImage = false;
-  currentImageData = null;
-
-  startCamera();
+  hasImage = true;
+  enableAnalyzeButton();
+  showStatus('cameraStatus', '✅ Photo captured! Click "Analyze" to continue.', 'success');
 }
 
 function previewImage(event) {
   const file = event.target.files[0];
+  if (!file) return;
+
   const preview = document.getElementById('uploadPreview');
-  const resultsBtn = document.getElementById('resultsBtn');
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    preview.src = e.target.result;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
 
-  if (file) {
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
-      preview.src = e.target.result;
-      preview.style.display = "block";
-      preview.classList.add('fade-in');
-      resultsBtn.classList.remove('hidden');
-      hasImage = true;
-      currentImageData = file;
-      showStatus('uploadStatus', `Image "${file.name}" uploaded! Click "ANALYZE FOR TB" to get results.`, 'success');
-    }
-
-    reader.readAsDataURL(file);
-  }
+  currentImageData = file;
+  hasImage = true;
+  enableAnalyzeButton();
+  showStatus('uploadStatus', `✅ File "${file.name}" uploaded.`, 'success');
 }
 
 function analyzeImage() {
-  if (!hasImage) {
-    alert('Please capture or upload an image first!');
+  if (!hasImage || !currentImageData) {
+    alert("Please capture or upload an image first.");
     return;
   }
 
   document.getElementById('loadingScreen').style.display = 'flex';
-
   const formData = new FormData();
 
+  // Image from camera (canvas) or upload (file)
   if (currentImageData instanceof HTMLCanvasElement) {
-    try {
-      currentImageData.toBlob(function(blob) {
-        if (!blob) {
-          alert('Error capturing image from camera.');
-          document.getElementById('loadingScreen').style.display = 'none';
-          return;
-        }
-        formData.append('image', blob, 'captured.png');
-        console.log('📸 Captured image ready for prediction.');
-        sendToBackend(formData);
-      }, 'image/png');
-    } catch (error) {
-      console.error('Error capturing image:', error);
-      alert('Camera capture failed.');
-      document.getElementById('loadingScreen').style.display = 'none';
-    }
+    currentImageData.toBlob((blob) => {
+      formData.append('image', blob, 'captured.png');
+      appendPatientData(formData);
+      sendToBackend(formData);
+    }, 'image/png');
   } else if (currentImageData instanceof File) {
     formData.append('image', currentImageData);
-    console.log('📁 Uploaded image ready for prediction.');
+    appendPatientData(formData);
     sendToBackend(formData);
-  } else {
-    alert('No valid image found.');
-    document.getElementById('loadingScreen').style.display = 'none';
+  }
+}
+
+function appendPatientData(formData) {
+  const formDataJSON = localStorage.getItem('tbPatientData');
+  if (formDataJSON) {
+    const patientData = JSON.parse(formDataJSON);
+    for (const key in patientData) {
+      if (Array.isArray(patientData[key])) {
+        patientData[key].forEach(val => formData.append(key, val));
+      } else {
+        formData.append(key, patientData[key]);
+      }
+    }
   }
 }
 
@@ -629,146 +588,37 @@ function sendToBackend(formData) {
     method: 'POST',
     body: formData
   })
-  .then(response => {
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.text();
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.text();
   })
   .then(html => {
     document.getElementById('loadingScreen').style.display = 'none';
-    document.open();
-    document.write(html);
-    document.close();
+    document.open(); document.write(html); document.close();
   })
-  .catch(error => {
-    console.error('❌ Error from backend:', error);
-    alert('Server error. Please try again.');
+  .catch(err => {
+    console.error("❌ Upload error:", err);
+    alert("Server error. Please try again.");
     document.getElementById('loadingScreen').style.display = 'none';
   });
+}
+
+function enableAnalyzeButton() {
+  const btn = document.getElementById("resultsBtn");
+  btn.disabled = false;
+  btn.style.opacity = "1";
+  btn.style.cursor = "pointer";
 }
 
 function showStatus(elementId, message, type) {
-  const statusElement = document.getElementById(elementId);
-  statusElement.textContent = message;
-  statusElement.className = `status-message status-${type === 'success' ? 'success' : 'info'}`;
-  statusElement.style.display = 'block';
-
-  setTimeout(() => {
-    statusElement.style.display = 'none';
-  }, 5000);
+  const el = document.getElementById(elementId);
+  el.textContent = message;
+  el.className = `status-message status-${type}`;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
 }
 
 window.addEventListener('beforeunload', () => {
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-  }
+  if (stream) stream.getTracks().forEach(track => track.stop());
 });
-
-
-
-
-//new codes added  
-
-
-// 🔁 Override form submission to combine image + stored form data
-document.getElementById('imageUploadForm').addEventListener('submit', function (e) {
-  e.preventDefault();
-
-  const imageFile = document.getElementById('imageInput').files[0];
-  if (!imageFile) {
-    alert("Please select or capture an image.");
-    return;
-  }
-
-  // Retrieve form data from localStorage
-  const formDataJSON = localStorage.getItem('tbPatientData');
-  if (!formDataJSON) {
-    alert("Patient form data missing. Please go back and fill the form.");
-    return;
-  }
-
-  const patientData = JSON.parse(formDataJSON);
-
-  const formData = new FormData();
-  formData.append('image', imageFile);
-
-  for (const key in patientData) {
-    if (Array.isArray(patientData[key])) {
-      patientData[key].forEach(val => formData.append(key, val));
-    } else {
-      formData.append(key, patientData[key]);
-    }
-  }
-
-  // Show loading screen
-  document.getElementById('loadingScreen').style.display = 'flex';
-
-  // Submit the full form to /predict_tb
-  fetch('/predict_tb', {
-    method: 'POST',
-    body: formData
-  })
-  .then(response => {
-    //if (response.redirected) {
-     // window.location.href = response.url;
-    //} else {
-     // return response.json().then(data => {
-      //  alert("Error: " + (data.error || "Something went wrong."));
-      //  document.getElementById('loadingScreen').style.display = 'none';
-     // });
-   // }
-
-     if (response.ok) {
-  return response.text().then(html => {
-    document.open();
-    document.write(html);
-    document.close();
-  });
-} else {
-  return response.json().then(data => {
-    alert("Error: " + (data.error || "Something went wrong."));
-    document.getElementById('loadingScreen').style.display = 'none';
-  });
-}
-
-
-  })
-  .catch(error => {
-    console.error("❌ Upload error:", error);
-    alert("Upload failed.");
-    document.getElementById('loadingScreen').style.display = 'none';
-  });
-});
-
-//////////////////////////////////////
-const resultsBtn = document.getElementById("resultsBtn");
-  const fileInput = document.getElementById("imageInput"); // change if your file input has a different ID
-  const cameraInput = document.getElementById("cameraInput"); // optional, if you have a camera capture input
-
-  function enableAnalyzeButton() {
-    resultsBtn.disabled = false;
-    resultsBtn.style.opacity = "1";
-    resultsBtn.style.cursor = "pointer";
-  }
-
-  // Enable when file is uploaded
-  if (fileInput) {
-    fileInput.addEventListener("change", () => {
-      if (fileInput.files.length > 0) {
-        enableAnalyzeButton();
-      }
-    });
-  }
-
-  // Enable when camera image is captured
-  if (cameraInput) {
-    cameraInput.addEventListener("change", () => {
-      if (cameraInput.files.length > 0) {
-        enableAnalyzeButton();
-      }
-    });
-  }
 </script>
-
-
-</body>
-</html>

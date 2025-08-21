@@ -1266,5 +1266,15 @@ heatmapCanvas.addEventListener("click", (e) => {
 
 
     </script>
+    <h2>{{ label }}</h2>
+<p>Confidence: {{ confidence }}%</p>
+<img src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" alt="Uploaded Image" width="300">
+{% if gradcam_image %}
+    <h3>Grad-CAM Heatmap</h3>
+    <img src="{{ url_for('static', filename='uploads/' + gradcam_image) }}" alt="Grad-CAM Heatmap" width="300">
+{% else %}
+    <p>No heatmap generated due to low confidence.</p>
+{% endif %}
+
 </body>
 </html>
